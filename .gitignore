@@ -1,0 +1,9 @@
+# 玩家資料與匯出檔：絕對不要上傳
+*.csv
+exports/
+data/responses/
+# 金鑰與設定
+.env
+.env.*
+# 系統檔
+.DS_Store

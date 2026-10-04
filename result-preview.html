@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>結果頁案例預覽｜小王子角色配對</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#FBF6EE;--card:#fff;--ink:#2B2620;--sub:#7A6F63;--line:#E8DFD2;--brand:#E07A3F;--brand-ink:#fff;--soft:#FCE9DA;--blue:#3D7EA6}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1C1814;--card:#28221D;--ink:#F3ECE2;--sub:#A99D8F;--line:#3B332B;--brand:#F09152;--brand-ink:#1C1814;--soft:#3A2A1E;--blue:#6FB0D8}}
+:root[data-theme="dark"]{--bg:#1C1814;--card:#28221D;--ink:#F3ECE2;--sub:#A99D8F;--line:#3B332B;--brand:#F09152;--brand-ink:#1C1814;--soft:#3A2A1E;--blue:#6FB0D8}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:520px;margin:0 auto;padding:16px 18px 56px}
+h1{font-size:1.4rem;margin:.3em 0}h2{font-size:1.05rem;margin:1.5em 0 .4em}
+.sub{color:var(--sub);font-size:.92rem}.small{font-size:.84rem;color:var(--sub)}.center{text-align:center}
+.notice{font-size:.84rem;color:var(--sub);background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:10px 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.chip{font:inherit;font-size:.9rem;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+.chip.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:700}
+.role{font-size:1.35rem;font-weight:800;color:var(--brand);margin-top:2px}
+.tag{display:inline-block;font-size:.78rem;background:var(--soft);color:var(--brand);border-radius:999px;padding:2px 12px;font-weight:700}
+.mbti{font-size:1.8rem;font-weight:800;letter-spacing:.18em;margin:6px 0 10px}
+.brow{display:flex;align-items:center;gap:8px;font-size:.88rem;margin:4px 0}.brow>span{width:7.2em;flex:none}.brow .pbar{flex:1}
+.pbar{height:8px;border-radius:8px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;background:var(--brand)}
+.sec{border-top:1px dashed var(--line);padding-top:8px;margin-top:10px}.sec p{margin:.2em 0}
+details{margin-top:10px;font-size:.88rem}summary{cursor:pointer;color:var(--sub)}
+.duo{display:flex;align-items:center;justify-content:space-around;text-align:center;margin:8px 0}.vs{font-size:1.4rem;color:var(--sub)}
+.trk{margin:2px 0 6px}.trkbar{position:relative;height:10px;background:var(--line);border-radius:10px;margin:12px 10px 8px}
+.mk{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%)}
+.mk.self{background:var(--brand)}.mk.oth{border:3px solid var(--blue);background:transparent}
+.cap{display:flex;justify-content:space-between;font-size:.76rem;color:var(--sub)}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--sub);justify-content:center}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:4px}.dot.self{background:var(--brand)}.dot.oth{border:3px solid var(--blue)}
+.talk{background:var(--soft);border-radius:18px;padding:16px;margin:10px 0}.talk .tg{font-size:.78rem;background:var(--card);color:var(--brand);border-radius:999px;padding:2px 10px;font-weight:700}.talk p{font-weight:600;margin:8px 0 0}
+</style></head><body><div class="wrap">
+<h1 class="center">結果頁案例預覽</h1>
+<p class="notice">這是<b>預覽用的虛構範例</b>，不是真實玩家資料。六個小王子角色依「相處摩擦傾向」配對，貼近度是相對排序，不是診斷。</p>
+<div class="row" id="tabs"></div>
+<div id="view"></div>
+</div><script>
+const AX=[
+ {n:'能量',e:'🔋',L:'獨處充電',R:'人群充電',lt:'I',rt:'E',fric:'一個想多見面、一個需要獨處時，容易覺得被冷落，或覺得被打擾。',tip:'約好「見面日」和「獨處日」；需要獨處時先說一聲：「我在充電，不是不想理你。」'},
+ {n:'討論重點',e:'🧭',L:'重現實細節',R:'重想像可能',lt:'S',rt:'N',fric:'一個抓事實和細節、一個談想像和可能，容易覺得對方「太挑剔」或「太飄」。',tip:'討論前先說這次是要「確認細節」還是「一起發想」。'},
+ {n:'意見不同時',e:'⚖️',L:'先講道理',R:'先顧感受',lt:'T',rt:'F',fric:'一個想先解決問題、一個想先被理解，容易覺得對方冷淡，或覺得對方情緒化。',tip:'先問一句：「你現在需要我聽你說，還是幫你想辦法？」'},
+ {n:'步調',e:'🗓️',L:'先安排好',R:'隨性看情況',lt:'J',rt:'P',fric:'一個習慣先計畫、一個習慣隨性，容易為了遲到、臨時改計畫起摩擦。',tip:'約定「至少提早幾小時通知」的底線，其餘就隨興。'},
+ {n:'壓力反應',e:'🌊',L:'壓力下起伏明顯',R:'壓力下很穩定',lt:'',rt:'',fric:'壓力下一個很穩定、一個起伏大，穩定的一方可能覺得對方「小題大作」，另一方覺得不被理解。',tip:'先約定一個暗號，代表「我需要被接住，不需要被分析」。'}
+];
+const SC=[
+ {s:'訊息沒回',o:['覺得他在忙，不太在意','有點在意，但不會說','直接問怎麼了','我也晚點再回','開始胡思亂想']},
+ {s:'遲到',o:['沒關係，自己找事做','有點不高興，但忍住','直接說我很在意','先問發生什麼事','之後會記在心裡']},
+ {s:'臨時改計畫',o:['很好啊，隨興更有趣','可以，但需要時間調整','會有點煩躁','希望可以提早通知','看對方的理由']},
+ {s:'想獨處時',o:['沒差，照常回應','回應，但有點累','婉拒','希望事先說一聲','看是誰']},
+ {s:'意見不同',o:['堅持講道理','先聽完再說','先退一步','轉移話題','事後再討論']},
+ {s:'被誤會',o:['當場說清楚','先沉默冷靜','用玩笑帶過','之後私下談','默默記在心裡']}
+];
+/* 角色：w = 各軸權重（以 3 為中心，-2~+2），m = 情境題加分的選項 */
+const ROLES={
+ king:{e:'👑',n:'國王',tag:'掌舵型',f:'想定節奏',need:'被配合、事情有方向',
+  light:'有方向感，做決定快，能把事情往前推。',shadow:'容易不自覺地替別人安排，對方可能覺得被指揮、插不上話。',
+  others:'想參與時，直接說「這部分我想自己決定」，通常會被接住。',w:[0,0,-1,-1,0.3],m:{4:[0],1:[2],5:[0],2:[2]}},
+ vain:{e:'🎩',n:'虛榮的人',tag:'渴望被看見型',f:'需要被回應',need:'被回應、被肯定',
+  light:'很會帶動氣氛，也很在意對方有沒有被照顧到。',shadow:'沒被回應或沒被看見時會失落，卻不一定說出口。',
+  others:'多給一句具體的回饋，比說十次「你很棒」更有用。',w:[1,0,0.6,0,-0.6],m:{0:[1,4],5:[0,2],1:[1]}},
+ drunk:{e:'🍷',n:'酒鬼',tag:'逃避循環型',f:'遇到衝突先退開',need:'先退開、慢慢消化',
+  light:'不輕易起衝突，也會替場面降溫。',shadow:'卡住時會先躲開，越躲越累，事情反而拖更久。',
+  others:'先說「我不是要吵架，只是想知道你現在怎麼樣」，再給他一點時間。',w:[-0.6,0,0.3,0,-1],m:{4:[3],5:[1,4],0:[3],3:[2]}},
+ merchant:{e:'💼',n:'商人',tag:'成果優先型',f:'把事情做完擺第一',need:'事情有進度、有清單',
+  light:'可靠、有效率，答應的事會做完。',shadow:'忙起來容易把「完成事情」排在「陪伴」前面。',
+  others:'約定好「專心相處的時間」，那段時間不談待辦事項。',w:[-0.3,-1,0,-1,0],m:{2:[3],1:[1],3:[3]}},
+ lamp:{e:'🏮',n:'點燈人',tag:'默默承擔型',f:'默默扛下來不說',need:'付出被看見',
+  light:'責任感強，總是顧到身邊的人。',shadow:'習慣自己扛、不說需求，累積久了會突然覺得委屈。',
+  others:'定期問一句「最近有哪件事你其實不想一個人扛？」',w:[0,0,0.8,-0.6,0.6],m:{1:[0],2:[1],3:[1],4:[2]}},
+ geo:{e:'🗺️',n:'地理學家',tag:'想很多型',f:'計畫很多、落地慢',need:'有空間想像、不被催',
+  light:'點子多、視野廣，聊起可能性特別有趣。',shadow:'想得多、做得慢，對方可能覺得講了很多卻沒有下文。',
+  others:'把討論結尾加上「那下一步是什麼？誰、什麼時候？」',w:[-0.3,1,0,1,0],m:{2:[0,4],4:[4],3:[0]}}
+};
+function roleScore(lk,scn){
+  const c=lk.map(v=>v-3);
+  return Object.entries(ROLES).map(([k,r])=>{
+    let raw=0;const why=[];
+    r.w.forEach((w,i)=>{const x=w*c[i];raw+=x;if(Math.abs(x)>=0.8){const v=lk[i];why.push(`${AX[i].n}偏「${v>=4?AX[i].R:AX[i].L}」`)}});
+    Object.entries(r.m).forEach(([q,opts])=>{if(opts.includes(scn[q])){raw+=1;why.push(`「${SC[q].s}」選了「${SC[q].o[scn[q]]}」`)}});
+    return {k,raw,why};
+  }).sort((a,b)=>b.raw-a.raw);
+}
+const mbti=lk=>AX.slice(0,4).map((a,i)=>lk[i]>=4?a.rt:lk[i]<=2?a.lt:'X').join('');
+const pole=(i,v)=>v>=4?AX[i].R:v<=2?AX[i].L:'在兩者之間';
+
+/* 範例資料（虛構） */
+const CASES=[
+ {id:'a',title:'互補型',blurb:'一個掌舵、一個默默承擔',
+  A:{name:'阿安',av:'🤴',lk:[3,2,1,1,4],scn:[2,2,3,3,0,0],g:{lk:[2,1,3,1,3],scn:[0,1,3,3,2,1]}},
+  B:{name:'小宏',av:'🏮',lk:[2,3,5,2,4],scn:[0,0,1,1,2,4],g:{lk:[3,2,2,1,3],scn:[2,2,3,3,0,0]}}},
+ {id:'b',title:'同頻型',blurb:'兩個都愛想像、愛隨性',
+  A:{name:'小雨',av:'🗺️',lk:[3,5,3,5,3],scn:[0,0,0,0,4,3],g:{lk:[3,5,3,4,3],scn:[0,0,0,0,4,3]}},
+  B:{name:'阿哲',av:'🦊',lk:[4,5,3,4,4],scn:[0,0,4,0,4,2],g:{lk:[3,5,3,5,3],scn:[0,0,0,0,4,3]}}},
+ {id:'c',title:'認知落差型',blurb:'看起來很穩，其實壓力下會躲起來',
+  A:{name:'小琪',av:'🌹',lk:[2,3,4,3,1],scn:[3,4,1,2,3,4],g:{lk:[4,3,4,2,3],scn:[2,2,0,1,2,2]}},
+  B:{name:'大維',av:'👑',lk:[4,3,3,2,5],scn:[2,2,3,1,1,0],g:{lk:[2,3,4,3,5],scn:[0,0,1,1,2,2]}}}
+];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function track(i,sv,ov){const pos=v=>((v-1)/4*100).toFixed(0);return `<div class="trk"><div class="trkbar">${ov?`<i class="mk oth" style="left:${pos(ov)}%"></i>`:''}${sv?`<i class="mk self" style="left:${pos(sv)}%"></i>`:''}</div><div class="cap"><span>◀ ${AX[i].L}</span><span>${AX[i].R} ▶</span></div></div>`}
+function bars(rs){
+  const mx=rs[0].raw,mn=rs[rs.length-1].raw;
+  return rs.slice(0,3).map((r,i)=>{const w=Math.round(18+82*(r.raw-mn)/((mx-mn)||1));return `<div class="brow"><span>${ROLES[r.k].e} ${ROLES[r.k].n}</span><div class="pbar"><i style="width:${w}%;opacity:${i?0.55:1}"></i></div></div>`}).join('');
+}
+function roleCard(P,rs){
+  const r=ROLES[rs[0].k],sec=ROLES[rs[1].k];
+  return `<div class="card"><div class="center"><div style="font-size:2.6rem">${P.av}</div><b style="font-size:1.15rem">${esc(P.name)}</b>
+  <div class="role">${r.e} ${r.n}</div><div class="tag">${r.tag}</div><div class="mbti">${mbti(P.lk)}</div></div>
+  ${bars(rs)}
+  <p class="small">第二貼近：${sec.e} ${sec.n}（${sec.tag}）</p>
+  <div class="sec"><b>相處時的亮點</b><p>${r.light}</p></div>
+  <div class="sec"><b>容易踩到的地方</b><p>${r.shadow}</p></div>
+  <div class="sec"><b>身邊的人可以這樣做</b><p>${r.others}</p></div>
+  <details><summary>為什麼是這個角色？</summary><ul>${(rs[0].why.slice(0,4)).map(w=>`<li>${esc(w)}</li>`).join('')||'<li>多個面向的綜合結果</li>'}</ul></details></div>`;
+}
+function view(c){
+  const A=c.A,B=c.B;
+  const rA=roleScore(A.lk,A.scn),rB=roleScore(B.lk,B.scn);
+  const aInB=roleScore(B.g.lk,B.g.scn),bInA=roleScore(A.g.lk,A.g.scn); // B 眼中的 A / A 眼中的 B
+  const perc=(P,self,other,viewer)=>{
+    const same=self[0].k===other[0].k,sr=ROLES[self[0].k],or=ROLES[other[0].k];
+    return `<div class="card"><b>${esc(viewer.name)}眼中的${esc(P.name)}</b>
+    <div class="duo"><div><div class="small">${esc(P.name)}自己</div><div class="role">${sr.e} ${sr.n}</div></div><div class="vs">${same?'＝':'≠'}</div><div><div class="small">${esc(viewer.name)}的印象</div><div class="role">${or.e} ${or.n}</div></div></div>
+    <p class="small">${same?`${esc(viewer.name)}看見的${esc(P.name)}，和${esc(P.name)}看自己的樣子一致。`:`${esc(viewer.name)}覺得${esc(P.name)}偏向「${or.tag}」，但${esc(P.name)}自己更像「${sr.tag}」。這個落差值得聊一聊。`}</p></div>`;
+  };
+  const order=AX.map((_,i)=>i).sort((x,y)=>Math.abs(A.lk[y]-B.lk[y])-Math.abs(A.lk[x]-B.lk[x])).slice(0,2);
+  const fr=order.map(i=>{const d=Math.abs(A.lk[i]-B.lk[i]);const lv=d>=3?'🔴 摩擦風險高':d===2?'🟠 可能有些摩擦':d===1?'🟡 小差異':'🟢 很同頻';
+    return `<div class="sec"><b>${AX[i].e} ${AX[i].n}　${lv}</b>${track(i,A.lk[i],B.lk[i])}
+    <p class="small" style="margin:0">${esc(A.name)}：${pole(i,A.lk[i])}　／　${esc(B.name)}：${pole(i,B.lk[i])}</p>
+    ${d>=1?`<p class="small">${AX[i].fric}</p><p><b>可以這樣做：</b>${AX[i].tip}</p>`:`<p class="small">這件事上你們很同頻，比較不會卡住。</p>`}</div>`}).join('');
+  const ra=ROLES[rA[0].k],rb=ROLES[rB[0].k],same=rA[0].k===rB[0].k;
+  const pair=same
+   ?`同樣是「${ra.tag}」，你們很容易互相理解，但也會把同一個盲點放大：${ra.shadow}<br><b>建議：</b>輪流當踩煞車的人，卡住時由當下比較清醒的那位先開口。`
+   :`${esc(A.name)}（${ra.e}${ra.tag}）需要「${ra.need}」；${esc(B.name)}（${rb.e}${rb.tag}）需要「${rb.need}」。<br>最容易卡在：${esc(A.name)}${ra.f}，而${esc(B.name)}${rb.f}。<br><b>建議：</b>${ra.others.replace(/^/,'對'+esc(A.name)+'：')}<br>${rb.others.replace(/^/,'對'+esc(B.name)+'：')}`;
+  const cards=[];
+  [[A,rA,aInB,B],[B,rB,bInA,A]].forEach(([P,self,oth,V])=>{if(self[0].k!==oth[0].k)cards.push(`${V.name}覺得${P.name}更像「${ROLES[oth[0].k].tag}」，${P.name}自己卻是「${ROLES[self[0].k].tag}」。是哪些時刻讓${V.name}這樣覺得？`)});
+  cards.push(`${A.name}與${B.name}最近一次因為「${AX[order[0]].n}」卡住是什麼時候？下次可以先約定什麼？`);
+  return `<p class="sub center">${esc(c.blurb)}</p>
+  <h2>① 兩張角色卡</h2>${roleCard(A,rA)}${roleCard(B,rB)}
+  <h2>② 對方眼中的你</h2>${perc(A,rA,aInB,B)}${perc(B,rB,bInA,A)}
+  <h2>③ 我們的摩擦地圖（前兩名）</h2><div class="card"><div class="legend"><span><i class="dot self"></i>${esc(A.name)}</span><span><i class="dot oth"></i>${esc(B.name)}</span></div>${fr}</div>
+  <h2>④ 組合解讀：${ra.e}${ra.n} × ${rb.e}${rb.n}</h2><div class="card"><p>${pair}</p></div>
+  <h2>⑤ 對話卡</h2>${cards.slice(0,3).map(t=>`<div class="talk"><span class="tg">對話卡</span><p>${esc(t)}</p></div>`).join('')}`;
+}
+let cur=0;
+function render(){
+  $('#tabs').innerHTML=CASES.map((c,i)=>`<button class="chip ${i===cur?'on':''}" data-i="${i}">案例 ${'ABC'[i]}｜${c.title}</button>`).join('');
+  $('#view').innerHTML=view(CASES[cur]);
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(b){cur=+b.dataset.i;render();window.scrollTo(0,0)}});
+render();
+</script></body></html>

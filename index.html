@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>我們怎麼看彼此｜面對面破冰遊戲</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#FBF6EE; --card:#FFFFFF; --ink:#2B2620; --sub:#7A6F63; --line:#E8DFD2;
+  --brand:#E07A3F; --brand-ink:#FFFFFF; --soft:#FCE9DA; --blue:#3D7EA6;
+  --ok:#2F8F6E; --no:#C9534F; --okbg:#E3F4EC; --nobg:#FBE6E4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1C1814; --card:#28221D; --ink:#F3ECE2; --sub:#A99D8F; --line:#3B332B;
+    --brand:#F09152; --brand-ink:#1C1814; --soft:#3A2A1E; --blue:#6FB0D8;
+    --ok:#5FC49F; --no:#EE7F7A; --okbg:#1F3A30; --nobg:#40262A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1C1814; --card:#28221D; --ink:#F3ECE2; --sub:#A99D8F; --line:#3B332B;
+  --brand:#F09152; --brand-ink:#1C1814; --soft:#3A2A1E; --blue:#6FB0D8;
+  --ok:#5FC49F; --no:#EE7F7A; --okbg:#1F3A30; --nobg:#40262A;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Heiti TC",system-ui,-apple-system,sans-serif;
+  line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:520px;margin:0 auto;padding:16px 18px 56px}
+h1{font-size:1.45rem;line-height:1.35;margin:.4em 0 .3em}
+h2{font-size:1.1rem;margin:1.2em 0 .4em}
+p{margin:.4em 0}
+.sub{color:var(--sub);font-size:.92rem}
+.small{font-size:.82rem;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.btn{display:block;width:100%;border:0;border-radius:14px;background:var(--brand);color:var(--brand-ink);
+  font:inherit;font-weight:700;font-size:1.02rem;padding:14px 16px;margin:16px 0 6px;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn.sm{display:inline-block;width:auto;padding:8px 14px;font-size:.9rem;margin:6px 6px 0 0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:10px 0 8px;z-index:5}
+.phase{display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-bottom:6px}
+.phase b{color:var(--brand)}
+.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brand);border-radius:6px;transition:width .3s}
+label{display:block;font-weight:700;font-size:.92rem;margin:16px 0 6px}
+input[type=text]{width:100%;font:inherit;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)}
+input[type=text]:focus{outline:2px solid var(--brand);border-color:transparent}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:.92rem;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+.chip.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:700}
+.emo{font-size:1.6rem;width:64px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:14px;border:1.5px solid var(--line);background:var(--card);cursor:pointer}
+.emo small{font-size:.66rem;color:var(--sub);margin-top:2px}
+.emo.on{border-color:var(--brand);background:var(--soft);outline:2px solid var(--brand)}
+.opt{display:block;width:100%;text-align:left;font:inherit;border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:14px;padding:14px 16px;margin:9px 0;cursor:pointer;font-size:1rem}
+.opt.on{border-color:var(--brand);background:var(--soft);font-weight:700}
+.q{font-size:1.25rem;font-weight:700;line-height:1.5;margin:10px 0 14px}
+.tag{display:inline-block;font-size:.78rem;background:var(--soft);color:var(--brand);border-radius:999px;padding:2px 10px;font-weight:700}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.scale button{font:inherit;font-weight:700;font-size:1.1rem;padding:14px 0;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.scale button.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.scalecap{display:flex;justify-content:space-between;font-size:.76rem;color:var(--sub);margin-top:4px}
+.scale.mini button{padding:9px 0;font-size:.95rem}
+.dimrow{padding:12px 0;border-top:1px dashed var(--line)}
+.dimrow:first-of-type{border-top:0}
+.big{font-size:3.4rem;line-height:1;font-weight:800;color:var(--brand);text-align:center;margin:8px 0}
+.center{text-align:center}
+.hero{font-size:4rem;text-align:center;margin:18px 0 4px}
+.radar{width:100%;height:auto;display:block;margin:0 auto;max-width:340px}
+.rg{fill:none;stroke:var(--line);stroke-width:1}
+.rl{fill:var(--sub);font-size:12px}
+.legend{display:flex;gap:14px;justify-content:center;font-size:.8rem;color:var(--sub);flex-wrap:wrap}
+.legend i{display:inline-block;width:18px;height:0;border-top:3px solid;vertical-align:middle;margin-right:4px}
+.legend i.d{border-top-style:dashed}
+.duel{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin:10px 0;background:var(--card)}
+.duel .who{font-size:.85rem;color:var(--sub)}
+.duel .ans{font-size:1.1rem;font-weight:700;margin:2px 0}
+.real{margin-top:8px;padding:8px 10px;border-radius:10px;font-size:.95rem}
+.real.ok{background:var(--okbg);color:var(--ok)}
+.real.no{background:var(--nobg);color:var(--no)}
+.zone{margin:10px 0}
+.zone h3{font-size:.95rem;margin:0 0 4px}
+.zone .chip{cursor:default;padding:5px 12px;font-size:.88rem}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--sub);font-weight:600;font-size:.8rem}
+.gap-up{color:var(--ok)} .gap-dn{color:var(--no)}
+.talk{background:var(--soft);border-radius:18px;padding:22px 18px;margin:12px 0;min-height:150px}
+.talk .tag{background:var(--card)}
+.talk p{font-size:1.12rem;font-weight:600;margin-top:10px}
+.pop{animation:pop .35s ease}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+.notice{font-size:.84rem;color:var(--sub);background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:10px 0}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.9rem;margin:10px 0;font-weight:400}
+.check input{margin-top:5px;width:18px;height:18px;accent-color:var(--brand)}
+.link{background:none;border:0;color:var(--sub);font:inherit;font-size:.82rem;text-decoration:underline;cursor:pointer;padding:6px 0}
+.stat{display:flex;gap:10px;margin:10px 0}
+.stat div{flex:1;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px;text-align:center}
+.stat b{display:block;font-size:1.4rem;color:var(--brand)}
+textarea{width:100%;font:inherit;padding:10px 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);resize:vertical}
+textarea:focus{outline:2px solid var(--brand);border-color:transparent}
+.trk{margin:2px 0 8px}
+.trkbar{position:relative;height:10px;background:var(--line);border-radius:10px;margin:12px 10px 8px}
+.mk{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);box-sizing:border-box}
+.mk.self{background:var(--brand)}
+.mk.oth{border:3px solid var(--blue);background:transparent}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:middle;margin-right:4px;box-sizing:border-box}
+.dot.self{background:var(--brand)}
+.dot.oth{border:3px solid var(--blue)}
+.mbti{font-size:2.2rem;font-weight:800;letter-spacing:.18em;color:var(--brand);margin:4px 0}
+.pbar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin:3px 0 8px}
+.pbar i{display:block;height:100%;background:var(--brand)}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="app"></div></div>
+<script>
+/* ========= 資料定義 ========= */
+const DIMS=[
+ {k:'energy',n:'能量',e:'🔋',L:'獨處充電',R:'人群充電',lt:'I',rt:'E',q:'我充電的方式比較像…',gq:'「{n}」充電的方式比較像…',
+  fric:'一個想多見面、一個需要獨處時，容易覺得被冷落，或覺得被打擾。',tip:'約好「見面日」和「獨處日」；需要獨處時先說一聲：「我在充電，不是不想理你。」'},
+ {k:'info',n:'討論重點',e:'🧭',L:'重現實細節',R:'重想像可能',lt:'S',rt:'N',q:'討論事情時，我比較會…',gq:'討論事情時，「{n}」比較會…',
+  fric:'一個抓事實和細節、一個談想像和可能，容易覺得對方「太挑剔」或「太飄」。',tip:'討論前先說這次是要「確認細節」還是「一起發想」。'},
+ {k:'decide',n:'意見不同時',e:'⚖️',L:'先講道理',R:'先顧感受',lt:'T',rt:'F',q:'意見不同時，我比較會…',gq:'意見不同時，「{n}」比較會…',
+  fric:'一個想先解決問題、一個想先被理解，容易覺得對方冷淡，或覺得對方情緒化。',tip:'先問一句：「你現在需要我聽你說，還是幫你想辦法？」'},
+ {k:'pace',n:'步調',e:'🗓️',L:'先安排好',R:'隨性看情況',lt:'J',rt:'P',q:'面對計畫，我比較…',gq:'面對計畫，「{n}」比較…',
+  fric:'一個習慣先計畫、一個習慣隨性，容易為了遲到、臨時改計畫起摩擦。',tip:'約定「至少提早幾小時通知」的底線，其餘就隨興。'},
+ {k:'stress',n:'壓力反應',e:'🌊',L:'壓力下起伏明顯',R:'壓力下很穩定',lt:'',rt:'',q:'壓力大的時候，我通常…',gq:'壓力大的時候，「{n}」通常…',
+  fric:'壓力下一個很穩定、一個起伏大，穩定的一方可能覺得對方「小題大作」，另一方覺得不被理解。',tip:'先約定一個暗號，代表「我需要被接住，不需要被分析」。'}
+];
+const LIKERT=DIMS.map((D,i)=>({d:i,t:D.q}));
+const SCN=[
+ {short:'訊息沒回',self:'對方很久沒回訊息時，我通常會…',guess:'「{n}」看到對方很久沒回訊息時，通常會…',opts:['覺得他在忙，不太在意','有點在意，但不會說','直接問怎麼了','我也晚點再回','開始胡思亂想']},
+ {short:'遲到',self:'約好的時間，對方遲到了 20 分鐘，我會…',guess:'約好的時間，對方遲到了 20 分鐘，「{n}」會…',opts:['沒關係，自己找事做','有點不高興，但忍住','直接說我很在意','先問發生什麼事','之後會記在心裡']},
+ {short:'臨時改計畫',self:'臨時要改計畫時，我的反應是…',guess:'臨時要改計畫時，「{n}」的反應是…',opts:['很好啊，隨興更有趣','可以，但需要時間調整','會有點煩躁','希望可以提早通知','看對方的理由']},
+ {short:'想獨處時',self:'我想一個人待著時，被人找我會…',guess:'「{n}」想一個人待著時，被人找會…',opts:['沒差，照常回應','回應，但有點累','婉拒','希望事先說一聲','看是誰']},
+ {short:'意見不同',self:'意見不一樣時，我通常會…',guess:'意見不一樣時，「{n}」通常會…',opts:['堅持講道理','先聽完再說','先退一步','轉移話題','事後再討論']},
+ {short:'被誤會',self:'被誤會，或聽到不舒服的話時，我會…',guess:'被誤會，或聽到不舒服的話時，「{n}」會…',opts:['當場說清楚','先沉默冷靜','用玩笑帶過','之後私下談','默默記在心裡']}
+];
+const WORDS=['幽默','細心','有主見','愛思考','溫柔','直接','熱情','安靜','慢熱','隨性','可靠','完美主義','敏感','愛操心','獨立','固執','神祕','害羞','有創意','感性','理性','好說話','有行動力','很真實','好奇','務實','浪漫','謹慎','率真','樂觀','穩重','善良','冷靜','愛玩','有責任感','重感情','低調','愛笑','細膩','果斷'];
+const EMOJIS=['🤴','🦊','🌹','👑','🎩','🍷','💼','🏮','🗺️'];
+const EMO_LABEL={'🤴':'小王子','🦊':'狐狸','🌹':'玫瑰','👑':'國王','🎩':'虛榮的人','🍷':'酒鬼','💼':'商人','🏮':'點燈人','🗺️':'地理學家'};
+const ARTIFACT_URL='https://claude.ai/artifact/Qq4HnZuroqKNttdAEQoviq';
+const STATUS=['忙碌中','放空中','充電中','正在探索','剛好很開心','有點累'];
+const INTERESTS=['閱讀','電影','音樂','旅行','美食','運動','創作','學術','遊戲','咖啡','散步','社會議題'];
+const TOPICS=['人生選擇','工作職涯','創作靈感','社會議題','感情關係','好吃好玩','近期煩惱','夢想計畫'];
+const REL=[
+ {k:'how',q:'我們怎麼認識的？',o:['學校','工作','朋友介紹','網路認識','其他']},
+ {k:'met',q:'我們見過面嗎？',o:['常常見面','偶爾見面','只見過一兩次','沒見過，只在線上聯絡']},
+ {k:'close',q:'你覺得我們的交情到哪個程度？',o:['點頭之交','認識的人','普通朋友','好朋友','知心好友','靈魂之友'],
+   desc:['見面會打招呼，但不太聊天','知道彼此是誰，偶爾聊幾句','有共同話題，會一起吃飯聊近況','會分享心情，有事會想到對方','很多心事都能說，也能講真話','不用多說就懂，是生命中很重要的人']},
+ {k:'long',q:'我們認識多久了？',o:['不到 1 年','1–3 年','3–5 年','5–10 年','10 年以上']}
+];
+const PHASES=['自我介紹','心理測驗','猜猜看','我們的關係','揭曉'];
+const TOPIC_Q={
+ '人生選擇':['最近有沒有一個讓你猶豫的選擇？你怎麼想？','如果沒有任何限制，你會選哪條路？'],
+ '工作職涯':['現在的工作或學業，哪一部分最讓你有成就感？','如果可以改變一件事，你想改什麼？'],
+ '創作靈感':['最近有什麼東西讓你突然很有靈感？','你最想完成但還沒開始的作品是什麼？'],
+ '社會議題':['最近有哪個議題讓你停下來想很久？','這個議題為什麼對你重要？'],
+ '感情關係':['你覺得一段關係裡最重要的是什麼？','什麼樣的相處會讓你覺得被理解？'],
+ '好吃好玩':['最近吃到最難忘的一餐是什麼？','下次想一起去哪裡走走？'],
+ '近期煩惱':['最近有什麼小煩惱，想聽聽別人的看法？','你通常希望別人怎麼回應你的煩惱：聽就好，還是給建議？'],
+ '夢想計畫':['三年後的你，希望正在做什麼？','現在離那件事最近的一小步是什麼？']
+};
+const TCATS=[['all','全部'],['mismatch','猜錯的地方'],['fric','可能的摩擦'],['topic','我們想聊的話題'],['generic','破冰小問題']];
+const GENERIC_TALK=[
+ {tag:'破冰',text:'各自說一件最近讓你開心的小事，對方猜猜看是什麼場景。'},
+ {tag:'忙碌對齊',text:'你覺得對方最近有多忙？對方再說說自己真正的忙碌程度。'},
+ {tag:'線上與現實',text:'你覺得社群上的你，和現實中的你，哪裡不太一樣？'}
+];
+
+/* ========= 狀態 ========= */
+let EVENT='',JOINCODE='',HOMEMODE='';
+const newP=()=>({
+  profile:{name:'',emoji:'🤴',status:'',interests:[],topics:[],line:'',cr:false,cs:false},
+  self:{lk:Array(LIKERT.length).fill(0),scn:Array(SCN.length).fill(-1),words:[]},
+  guess:{dims:Array(5).fill(0),scn:Array(SCN.length).fill(-1),words:[]},
+  rel:{how:-1,met:-1,close:-1,long:-1},
+  reacts:{}
+});
+function normalize(p){const b=newP();p=p||{};return {profile:{...b.profile,...(p.profile||{})},self:{...b.self,...(p.self||{})},guess:{...b.guess,...(p.guess||{})},rel:{...b.rel,...(p.rel||{})},reacts:p.reacts||{}}}
+let S=fresh();
+function fresh(){return {rmode:'',mode:'home',step:0,steps:[],me:-1,code:'',created:0,players:[newP(),newP()],flags:[{},{}],myF:{profileDone:false,done:false},seen:{a:false,b:false},
+  inv:'',revStep:0,rv:Array(SCN.length).fill(false),talk:0,tcat:'all',draft:{},fb:{len:'',fun:'',sent:false},admin:false,onlyConsent:false,err:'',joinErr:'',busy:false,saved:false,rec:null,unsubs:[]}}
+const LOCAL=[];
+let DB=null,CAN=false,WRITE=null,DBSTATE='checking',dlOK=false;
+let lock=false,wq=Promise.resolve();
+const queue=fn=>{wq=wq.then(fn).catch(()=>{});return wq};
+
+function buildSteps(me){
+  const s=[{t:'lobby',ph:1}];
+  s.push({t:'profile',p:me,ph:1});
+  LIKERT.forEach((_,i)=>s.push({t:'likert',p:me,i,ph:2}));
+  SCN.forEach((_,i)=>s.push({t:'scn',p:me,i,ph:2}));
+  s.push({t:'words',p:me,mode:'self',ph:2});
+  s.push({t:'card',p:me,ph:2});
+  s.push({t:'wait-prof',ph:3});
+  s.push({t:'gdim',p:me,ph:3});
+  SCN.forEach((_,i)=>s.push({t:'gscn',p:me,i,ph:3}));
+  s.push({t:'words',p:me,mode:'guess',ph:3});
+  s.push({t:'rel',p:me,ph:4});
+  s.push({t:'wait-done',ph:4});
+  return s;
+}
+const REV=[{t:'r-score'},...SCN.map((_,i)=>({t:'r-scn',i})),{t:'r-dim'},{t:'r-fric'},{t:'r-words'},{t:'r-rel'},{t:'r-talk'},{t:'r-end'}];
+
+/* ========= 工具 ========= */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nm=p=>(S.players[p].profile.name||'').trim()||('玩家'+(p+1));
+const emo=p=>S.players[p].profile.emoji;
+const avg=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);
+function selfDim(p){return DIMS.map((_,d)=>avg(S.players[p].self.lk.filter((_,i)=>LIKERT[i].d===d)))}
+function score(g){
+  const t=1-g,G=S.players[g].guess,T=S.players[t];
+  const m=SCN.map((_,i)=>G.scn[i]===T.self.scn[i]);
+  const sd=selfDim(t);
+  const dc=DIMS.map((_,d)=>1-Math.min(4,Math.abs(G.dims[d]-sd[d]))/4);
+  const ov=G.words.filter(w=>T.self.words.includes(w)).length;
+  const sc=Math.round(m.filter(Boolean).length/SCN.length*45+avg(dc)*45+Math.min(ov,2)/2*10);
+  return {sc,m,dc,ov,hit:m.filter(Boolean).length};
+}
+function combined(){return Math.round((score(0).sc+score(1).sc)/2)}
+function tier(n){return n>=85?'靈魂共鳴 ✨':n>=70?'默契十足 🎯':n>=50?'正在升溫 🔥':'好奇寶寶，開聊吧 🗨️'}
+function topDim(p){const v=selfDim(p);let b=0;v.forEach((x,i)=>{if(x>v[b])b=i});return b}
+
+function track(D,sv,ov){
+  const pos=v=>((v-1)/4*100).toFixed(0);
+  return `<div class="trk"><div class="trkbar">${ov?`<i class="mk oth" style="left:${pos(ov)}%"></i>`:''}${sv?`<i class="mk self" style="left:${pos(sv)}%"></i>`:''}</div><div class="scalecap"><span>◀ ${D.L}</span><span>${D.R} ▶</span></div></div>`;
+}
+function mbtiOf(vals){return DIMS.slice(0,4).map((D,i)=>{const v=vals[i];return v>=4?D.rt:(v>0&&v<=2)?D.lt:'X'}).join('')}
+function pole(D,v){return v>=4?D.R:(v>0&&v<=2)?D.L:'在兩者之間'}
+function stressTag(v){return v>=4?'壓力下偏穩定':(v>0&&v<=2)?'壓力下起伏較明顯':'壓力反應居中'}
+function radar(series){
+  const size=320,R=size*0.32,c=size/2;
+  const pt=(i,v)=>{const a=(-90+i*72)*Math.PI/180,r=R*v/5;return [c+r*Math.cos(a),c+r*Math.sin(a)]};
+  let g='';
+  [1,2,3,4,5].forEach(l=>{g+=`<polygon class="rg" points="${DIMS.map((_,i)=>pt(i,l).map(x=>x.toFixed(1)).join(',')).join(' ')}"/>`});
+  DIMS.forEach((d,i)=>{
+    const [x,y]=pt(i,5);g+=`<line class="rg" x1="${c}" y1="${c}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`;
+    const [lx,ly]=pt(i,6.4);
+    g+=`<text class="rl" x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${d.e} ${d.s}</text>`;
+  });
+  series.forEach(s=>{
+    const pts=s.vals.map((v,i)=>pt(i,Math.max(v,0.3)).map(x=>x.toFixed(1)).join(',')).join(' ');
+    g+=`<polygon points="${pts}" style="fill:${s.color};fill-opacity:${s.dash?0.06:0.22};stroke:${s.color};stroke-width:2.5;${s.dash?'stroke-dasharray:6 4;':''}"/>`;
+  });
+  return `<svg viewBox="0 0 ${size} ${size}" class="radar" role="img" aria-label="五個面向雷達圖">${g}</svg>`;
+}
+
+/* ========= 畫面 ========= */
+function render(keep){
+  const y=window.scrollY;
+  const app=document.getElementById('app');
+  let html;
+  if(S.admin)html=sAdmin();
+  else if(S.mode==='home')html=sHome();
+  else if(S.mode==='reveal')html=barHTML(5,Math.round(S.revStep/(REV.length-1)*100))+errBox()+screen(REV[S.revStep]);
+  else{const st=S.steps[S.step];html=barHTML(st.ph,Math.round(S.step/(S.steps.length-1)*100))+errBox()+screen(st)}
+  app.innerHTML=html;
+  if(keep)window.scrollTo(0,y);else window.scrollTo(0,0);
+}
+function errBox(){return S.err?`<p class="notice" style="color:var(--no)">${esc(S.err)}</p>`:''}
+function barHTML(ph,pct){
+  return `<div class="top"><div class="phase">${PHASES.map((n,i)=>i+1===ph?`<b>${i+1} ${n}</b>`:`<span>${i+1} ${n}</span>`).join('')}</div><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+}
+function screen(st){
+  switch(st.t){
+    case 'lobby':return sLobby();
+    case 'wait-prof':return sWait('等對方完成自我介紹…',S.rmode==='online'?'要先知道對方是誰，才能猜他的答案。對方完成自我介紹後，你就能繼續。':'你們各自用自己的手機同時進行。對方做完自我介紹後，就能開始「猜猜看」。');
+    case 'wait-done':return sWait('你完成了！等對方做完…',S.rmode==='online'?'對方也完成後，你就能看到結果並留下反應。':'對方做完後，兩支手機會同時進入揭曉。');
+    case 'profile':return sProfile(st.p);
+    case 'likert':return sLikert(st);
+    case 'scn':return sScn(st,false);
+    case 'gscn':return sScn(st,true);
+    case 'words':return sWords(st);
+    case 'card':return sCard(st.p);
+    case 'gdim':return sGDim(st.p);
+    case 'rel':return sRel(st.p);
+    case 'r-score':return sRScore();
+    case 'r-scn':return sRScn(st.i);
+    case 'r-dim':return sRDim();
+    case 'r-fric':return sRFric();
+    case 'r-words':return sRWords();
+    case 'r-rel':return sRRel();
+    case 'r-talk':return sRTalk();
+    case 'r-end':return sREnd();
+  }
+  return '';
+}
+
+function sHome(){
+  if(!HOMEMODE)return `<div class="hero">🃏</div>
+  <h1 class="center">我們怎麼看彼此</h1>
+  <p class="sub center">先認識自己，再猜猜對方，最後看「我以為的」和「你看到的」差在哪。<br>你們現在是怎麼玩？</p>
+  <button class="opt" data-a="hm" data-v="online" style="margin-top:18px"><b>🌐 線上玩</b><br><span class="small">兩個人在不同的地方、不同的時間。各自找時間做完，再回來看結果、留表情和評論，不需要同時在線。</span></button>
+  <button class="opt" data-a="hm" data-v="offline"><b>🤝 線下玩</b><br><span class="small">兩個人在同一個空間。各自用手機先做完測試，再一起看結果、抽對話卡，面對面聊。</span></button>
+  <div class="center"><button class="link" data-a="admin">後台</button></div>`;
+  const on=HOMEMODE==='online';
+  let st='';
+  const diag=`<p class="small">診斷：資料庫${DB?'已連線':'未連線'}　寫入權限：${WRITE===true?'有':WRITE===false?'沒有':'未知'}　編輯者：${CAN?'是':'否'}</p>`;
+  if(DBSTATE==='checking')st='<p class="notice">正在連線…</p>';
+  else if(DBSTATE==='none'||!DB)st='<p class="notice" style="color:var(--no)">目前連不上同步服務。需要用已登入 claude.ai 的瀏覽器開啟這個連結，且對這個頁面有「貢獻者」以上權限。</p>';
+  else if(WRITE===false)st='<p class="notice" style="color:var(--no)">你目前的權限無法寫入資料，無法建立或加入房間。請把頁面分享權限設為「貢獻者」。</p>';
+  const off=(DBSTATE!=='ok'||!DB||WRITE===false||S.busy)?'disabled':'';
+  return `<div class="top"><button class="link" data-a="hm" data-v="">← 重新選擇玩法</button></div>
+  <h1>${on?'🌐 線上玩':'🤝 線下玩'}</h1>
+  <div class="card"><p class="small" style="margin:0">${on
+    ?'你們不用同時在線。流程是：<b>自我介紹 → 心理測驗 → 猜猜看 → 關係</b>，各自找時間做完；兩個人都完成後，各自打開結果、留言，慢慢對答案。請記下房間碼，之後回來用。'
+    :'你們在同一個空間，各自拿自己的手機。流程是：<b>自我介紹 → 心理測驗 → 猜猜看 → 關係</b>，各自先做完；兩個人都完成後，手機會<b>同步揭曉</b>，接著抽對話卡，放下手機面對面聊。'}</p></div>
+  ${st}${diag}${S.joinErr?`<p class="notice" style="color:var(--no)">${esc(S.joinErr)}</p>`:''}
+  <h2>我是第一位：建立房間</h2>
+  <input type="text" id="ev" data-f="event" maxlength="30" placeholder="場次名稱（選填），例如：十月讀書會" value="${esc(EVENT)}">
+  <button class="btn" data-a="create" ${off}>建立房間</button>
+  <h2>我是第二位：加入房間</h2>
+  <input type="text" inputmode="numeric" data-f="joincode" maxlength="5" placeholder="輸入對方給你的 5 位數房間碼" value="${esc(JOINCODE)}">
+  <button class="btn ghost" data-a="join" ${off}>加入房間</button>
+  <h2>回到已經開始的房間</h2>
+  <p class="small">輸入上面的房間碼，選你是第幾位，就會回到你的進度。</p>
+  <div class="row"><button class="chip" data-a="resume" data-v="0" ${off}>我是第一位</button><button class="chip" data-a="resume" data-v="1" ${off}>我是第二位</button></div>
+  <div class="center"><button class="link" data-a="admin">後台</button></div>`;
+}
+function inviteText(){
+  const on=S.rmode==='online';
+  return `我邀請你一起玩《我們怎麼看彼此》🃏（${on?'線上玩，不用同時在線':'線下玩，我們面對面'}）\n1. 用已登入 claude.ai 的瀏覽器打開：${ARTIFACT_URL}\n2. 選「${on?'線上玩':'線下玩'}」→「加入房間」\n3. 輸入房間碼：${S.code}`;
+}
+function inviteBox(){
+  const t=inviteText(),enc=encodeURIComponent(t);
+  return `<div class="card"><b>邀請對方</b><p class="small" style="margin:4px 0 8px">網頁沒辦法替你自動發訊息，但可以一鍵帶到 LINE，或用手機的分享選單選 IG 等其他 App。</p>
+  <textarea id="invtext" rows="5" readonly>${esc(t)}</textarea>
+  <a class="btn sm" style="text-decoration:none" href="https://line.me/R/msg/text/?${enc}" target="_blank" rel="noopener">傳到 LINE</a>
+  <button class="btn sm ghost" data-a="share">分享…（IG 等）</button>
+  <button class="btn sm ghost" data-a="copyinv">複製邀請訊息</button>
+  <a class="btn sm ghost" style="text-decoration:none" href="mailto:?subject=${encodeURIComponent('邀請你玩《我們怎麼看彼此》')}&body=${enc}">Email</a>
+  ${S.inv?`<p class="small">${esc(S.inv)}</p>`:''}</div>`;
+}
+function sLobby(){
+  if(S.rmode==='online')return `<h1 class="center">房間碼</h1>
+  <div class="big" style="letter-spacing:.12em">${esc(S.code)}</div>
+  <p class="center sub">請把房間碼傳給對方（訊息、Email 都可以）。<br>${S.me===0?'對方什麼時候加入都可以，':'你已加入房間，'}你可以現在就開始自己的部分。</p>
+  <p class="notice">離開後想回來，在首頁選「線上玩」，輸入房間碼並選你是第幾位。</p>
+  ${inviteBox()}
+  <button class="btn" data-a="next">開始我的部分</button>`;
+  return `<h1 class="center">房間碼</h1>
+  <div class="big" style="letter-spacing:.12em">${esc(S.code)}</div>
+  <p class="center sub">${S.me===0?'請對方在首頁選「線下玩」→「加入房間」，輸入這組房間碼。':'已加入房間，正在同步…'}</p>
+  <div class="card center pop"><div style="font-size:2rem">⏳</div><p>等待雙方都就位</p></div>
+  ${S.me===0?inviteBox():''}`;
+}
+function sWait(t,d){
+  const on=S.rmode==='online';
+  return `<div class="hero">⏳</div><h1 class="center">${esc(t)}</h1><p class="center sub">${esc(d)}</p>
+  ${on?`<p class="notice">不用一直等。你可以先離開，之後回到首頁選「線上玩」→「回到已經開始的房間」，輸入房間碼 <b>${esc(S.code)}</b> 並選你是第幾位。</p><button class="btn ghost" data-a="restart">先離開，稍後回來</button>`:''}`;
+}
+
+function chips(p,f,list,max){
+  const cur=S.players[p].profile[f];
+  return `<div class="row">${list.map(v=>`<button class="chip ${cur.includes(v)?'on':''}" data-a="tog" data-p="${p}" data-f="${f}" data-v="${esc(v)}" data-max="${max}">${esc(v)}</button>`).join('')}</div>`;
+}
+function sProfile(p){
+  const P=S.players[p].profile;
+  return `<h1>第 ${p+1} 位：自我介紹卡</h1>
+  <p class="sub">這張卡最後會讓對方看到。</p>
+  <label>暱稱</label>
+  <input type="text" data-f="name" data-p="${p}" maxlength="12" placeholder="想被怎麼稱呼？" value="${esc(P.name)}">
+  <label>代表圖案</label>
+  <div class="row">${EMOJIS.map(e=>`<button class="emo ${P.emoji===e?'on':''}" data-a="emoji" data-p="${p}" data-v="${e}">${e}<small>${EMO_LABEL[e]||''}</small></button>`).join('')}</div>
+  <label>我現在的狀態</label>
+  <div class="row">${STATUS.map(v=>`<button class="chip ${P.status===v?'on':''}" data-a="status" data-p="${p}" data-v="${v}">${v}</button>`).join('')}</div>
+  <label>我的興趣（最多 4 個）</label>${chips(p,'interests',INTERESTS,4)}
+  <label>我想聊的話題（最多 3 個）</label>${chips(p,'topics',TOPICS,3)}
+  <label>一句話介紹自己（選填）</label>
+  <input type="text" data-f="line" data-p="${p}" maxlength="40" placeholder="例如：正在學習怎麼好好休息" value="${esc(P.line)}">
+  <label class="check"><input type="checkbox" data-f="cr" data-p="${p}" ${P.cr?'checked':''}> 我同意匿名資料用於研究分析</label>
+  <label class="check"><input type="checkbox" data-f="cs" data-p="${p}" ${P.cs?'checked':''}> 我同意匿名結果在展覽或作品中呈現</label>
+  <button class="btn" id="pf-next" data-a="next" ${P.name.trim()?'':'disabled'}>完成介紹卡</button>`;
+}
+
+function sLikert(st){
+  const D=DIMS[st.i],P=S.players[st.p];
+  return `<p class="small">${esc(nm(st.p))} ・ 第 ${st.i+1} / ${LIKERT.length} 題</p>
+  <span class="tag">${D.e} ${D.n}</span>
+  <div class="q">${esc(D.q)}</div>
+  <div class="scale">${[1,2,3,4,5].map(v=>`<button class="${P.self.lk[st.i]===v?'on':''}" data-a="lk" data-p="${st.p}" data-i="${st.i}" data-v="${v}">${v}</button>`).join('')}</div>
+  <div class="scalecap"><span>◀ ${D.L}</span><span>${D.R} ▶</span></div>
+  <p class="small center" style="margin-top:10px">3 代表兩邊都有一點</p>`;
+}
+
+function sScn(st,guess){
+  const q=SCN[st.i],P=S.players[st.p],cur=guess?P.guess.scn[st.i]:P.self.scn[st.i];
+  const target=1-st.p;
+  const text=guess?q.guess.replace('{n}','「'+nm(target)+'」'):q.self;
+  return `<p class="small">${esc(nm(st.p))} ・ ${guess?'猜猜看':'情境題'} ${st.i+1} / ${SCN.length}</p>
+  <span class="tag">${guess?emo(target)+' 猜 '+esc(nm(target)):'✍️ 我的答案'}</span>
+  <div class="q">${esc(text)}</div>
+  ${q.opts.map((o,v)=>`<button class="opt ${cur===v?'on':''}" data-a="${guess?'gscn':'scn'}" data-p="${st.p}" data-i="${st.i}" data-v="${v}">${esc(o)}</button>`).join('')}`;
+}
+
+function sWords(st){
+  const P=S.players[st.p],g=st.mode==='guess',list=g?P.guess.words:P.self.words,t=1-st.p;
+  return `<p class="small">${esc(nm(st.p))} ・ ${g?'猜猜看':'形容詞'}</p>
+  <h1>${g?`選 5 個你覺得最像「${esc(nm(t))}」的詞`:'選 5 個最像你的詞'}</h1>
+  <div class="row" style="margin-top:12px">${WORDS.map(w=>`<button class="chip ${list.includes(w)?'on':''}" data-a="word" data-p="${st.p}" data-m="${g?'guess':'self'}" data-v="${w}">${w}</button>`).join('')}</div>
+  <p class="small" style="margin-top:12px">已選 ${list.length} / 5</p>
+  <button class="btn" data-a="next" ${list.length===5?'':'disabled'}>${g?'完成猜猜看':'看我的角色卡'}</button>`;
+}
+
+function sCard(p){
+  const P=S.players[p],sd=selfDim(p);
+  return `<h1 class="center">你的角色卡</h1>
+  <div class="card pop center">
+    <div style="font-size:3rem">${P.profile.emoji}</div>
+    <div style="font-size:1.3rem;font-weight:800">${esc(nm(p))}</div>
+    <div class="mbti">${mbtiOf(sd)}</div>
+    <div class="small">日常相處風格（MBTI 簡化版，非正式測驗）　·　${stressTag(sd[4])}</div>
+    ${P.profile.line?`<p class="sub">「${esc(P.profile.line)}」</p>`:''}
+    <div style="text-align:left;margin-top:10px">${DIMS.map((D,k)=>`<div class="dimrow"><b>${D.e} ${D.n}</b>${track(D,sd[k],0)}</div>`).join('')}</div>
+    <div class="row" style="justify-content:center;margin-top:8px">${P.self.words.map(w=>`<span class="chip on" style="cursor:default">${esc(w)}</span>`).join('')}</div>
+    ${P.profile.status||P.profile.interests.length?`<p class="small" style="margin-top:10px">${P.profile.status?'現在：'+esc(P.profile.status)+'　':''}${P.profile.interests.length?'興趣：'+P.profile.interests.map(esc).join('、'):''}</p>`:''}
+    ${P.profile.topics.length?`<p class="small">想聊：${P.profile.topics.map(esc).join('、')}</p>`:''}
+  </div>
+  <p class="notice">這是你自己眼中的你。等一下對方會在他的手機上猜猜看，看看他眼中的你，和這張卡有多接近。</p>
+  <button class="btn" data-a="next">繼續</button>`;
+}
+
+function sGDim(p){
+  const t=1-p,P=S.players[p],done=P.guess.dims.every(v=>v>0);
+  return `<p class="small">${esc(nm(p))} ・ 猜猜看</p>
+  <h1>憑印象，「${esc(nm(t))}」比較像哪一邊？</h1>
+  <p class="sub">3 代表兩邊都有一點</p>
+  <div class="card">${DIMS.map((D,k)=>`<div class="dimrow"><b>${D.e} ${D.n}</b><div class="small">${esc(D.gq.replace('{n}',nm(t)))}</div>
+    <div class="scale mini">${[1,2,3,4,5].map(v=>`<button class="${P.guess.dims[k]===v?'on':''}" data-a="gdim" data-p="${p}" data-k="${k}" data-v="${v}">${v}</button>`).join('')}</div>
+    <div class="scalecap"><span>◀ ${D.L}</span><span>${D.R} ▶</span></div></div>`).join('')}</div>
+  <button class="btn" data-a="next" ${done?'':'disabled'}>下一步</button>`;
+}
+
+function sRel(p){
+  const t=1-p,R=S.players[p].rel,done=Object.values(R).every(v=>v>=0);
+  return `<p class="small">${esc(nm(p))} ・ 我們的關係</p>
+  <h1>你覺得你和「${esc(nm(t))}」的關係是？</h1>
+  ${REL.map(r=>`<label>${r.q}</label><div class="row">${r.o.map((o,v)=>`<button class="chip ${R[r.k]===v?'on':''}" data-a="rel" data-p="${p}" data-k="${r.k}" data-v="${v}">${esc(o)}</button>`).join('')}</div>${r.desc&&R[r.k]>=0?`<p class="small">${r.desc[R[r.k]]}</p>`:''}`).join('')}
+  <button class="btn" data-a="next" ${done?'':'disabled'}>完成</button>`;
+}
+
+/* ===== 揭曉 ===== */
+function sRScore(){
+  const a=score(0),b=score(1),c=combined();
+  const line=(g,s)=>`<div style="margin:12px 0"><b>${emo(g)} ${esc(nm(g))} 猜 ${esc(nm(1-g))}</b>　<span style="color:var(--brand);font-weight:800">${s.sc} 分</span>
+    <div class="pbar"><i style="width:${s.sc}%"></i></div>
+    <div class="small">情境題猜中 ${s.hit} / ${SCN.length}　·　面向貼近度 ${Math.round(avg(s.dc)*100)}%　·　形容詞相同 ${s.ov} 個</div></div>`;
+  return `<h1 class="center">我們的默契分數</h1>
+  <div class="card pop"><div class="big">${c}</div><p class="center" style="font-weight:700;font-size:1.1rem">${tier(c)}</p>
+  ${line(0,a)}${line(1,b)}</div>
+  <p class="notice">分數不是越高越好。猜錯的地方，才是最值得聊的地方。接下來一題一題揭曉。</p>
+  ${reactBox('score')}
+  <button class="btn" data-a="next">一題一題揭曉</button>`;
+}
+
+function sRScn(i){
+  const q=SCN[i];
+  const rows=[0,1].map(g=>{
+    const t=1-g,gi=S.players[g].guess.scn[i],ri=S.players[t].self.scn[i],ok=gi===ri;
+    return `<div class="duel"><div class="who">${emo(g)} ${esc(nm(g))} 猜 ${esc(nm(t))} 會選</div><div class="ans">${esc(q.opts[gi])}</div>
+    ${S.rv[i]?`<div class="real ${ok?'ok':'no'} pop">${ok?'✔ 猜中！':'✖ 其實是'}　<b>${esc(q.opts[ri])}</b></div>`:''}</div>`;
+  }).join('');
+  return `<p class="small">揭曉 ${i+1} / ${SCN.length}</p><span class="tag">${esc(q.short)}</span>
+  <div class="q">${esc(q.self.replace('我','每個人'))}</div>${rows}
+  ${S.rv[i]?reactBox('scn'+i):''}
+  ${S.rv[i]?`<button class="btn" data-a="next">下一題</button>`:`<button class="btn" data-a="reveal" data-i="${i}">揭曉答案 🥁</button>`}`;
+}
+
+function sRDim(){
+  const blocks=[0,1].map(g=>{
+    const t=1-g,sd=selfDim(t),gv=S.players[g].guess.dims;
+    return `<div class="card"><h2 style="margin-top:0">${emo(t)} ${esc(nm(t))}眼中的自己 vs ${esc(nm(g))}眼中的${esc(nm(t))}</h2>
+    <div class="legend"><span><i class="dot self"></i>${esc(nm(t))}自評</span><span><i class="dot oth"></i>${esc(nm(g))}的印象</span></div>
+    <p style="text-align:center;margin:8px 0">${esc(nm(t))}自己：<b>${mbtiOf(sd)}</b>　·　${esc(nm(g))}猜的：<b>${mbtiOf(gv)}</b></p>
+    ${DIMS.map((D,k)=>`<div class="dimrow"><b>${D.e} ${D.n}</b>${track(D,sd[k],gv[k])}</div>`).join('')}</div>`;
+  }).join('');
+  return `<h1>面向對照</h1><p class="sub">實心是本人給自己的位置，空心圈是對方心中的位置。</p>${blocks}${reactBox('dim')}<button class="btn" data-a="next">看摩擦地圖</button>`;
+}
+function sRFric(){
+  const a=selfDim(0),b=selfDim(1);
+  const lvl=d=>d>=3?['🔴','摩擦風險高']:d===2?['🟠','可能有些摩擦']:d===1?['🟡','小差異']:['🟢','很同頻'];
+  const order=DIMS.map((_,k)=>k).sort((x,y)=>Math.abs(a[y]-b[y])-Math.abs(a[x]-b[x]));
+  const cards=order.map(k=>{
+    const D=DIMS[k],d=Math.abs(a[k]-b[k]),[ic,lb]=lvl(d);
+    return `<div class="card"><b>${D.e} ${D.n}　${ic} ${lb}</b>
+    ${track(D,a[k],b[k])}
+    <p class="small" style="margin:0">${esc(nm(0))}：${esc(pole(D,a[k]))}　／　${esc(nm(1))}：${esc(pole(D,b[k]))}</p>
+    ${d>=1?`<p class="small">${esc(D.fric)}</p><p><b>可以這樣做：</b>${esc(D.tip)}</p>`:'<p class="small">你們在這件事上很同頻，比較不會卡住。</p>'}</div>`;
+  }).join('');
+  return `<h1>我們的摩擦地圖</h1>
+  <p class="sub">根據你們各自的自評，差距越大的地方，日常相處越需要先講好。</p>
+  <p class="center"><b>${esc(nm(0))} ${mbtiOf(a)}</b>　×　<b>${esc(nm(1))} ${mbtiOf(b)}</b></p>
+  <div class="legend"><span><i class="dot self"></i>${esc(nm(0))}</span><span><i class="dot oth"></i>${esc(nm(1))}</span></div>
+  ${cards}${reactBox('fric')}<button class="btn" data-a="next">看形容詞</button>`;
+}
+
+function sRWords(){
+  const blocks=[0,1].map(g=>{
+    const t=1-g,A=S.players[g].guess.words,B=S.players[t].self.words;
+    const pub=A.filter(w=>B.includes(w)),blind=A.filter(w=>!B.includes(w)),hid=B.filter(w=>!A.includes(w));
+    const z=(title,desc,arr)=>`<div class="zone"><h3>${title}</h3><div class="small" style="margin-bottom:4px">${desc}</div><div class="row">${arr.length?arr.map(w=>`<span class="chip on">${esc(w)}</span>`).join(''):'<span class="small">（這區是空的）</span>'}</div></div>`;
+    return `<div class="card"><h2 style="margin-top:0">${emo(t)} ${esc(nm(t))} 的形容詞</h2>
+    ${z('🟢 公開區','雙方都選到的詞',pub)}
+    ${z('🔵 盲點區',`${esc(nm(g))}看到了，但${esc(nm(t))}沒選`,blind)}
+    ${z('🟠 隱藏區',`${esc(nm(t))}選了，但${esc(nm(g))}沒猜到`,hid)}</div>`;
+  }).join('');
+  return `<h1>形容詞三區</h1><p class="sub">盲點區的詞，往往是「別人眼中的我」最有趣的部分。</p>${blocks}${reactBox('words')}<button class="btn" data-a="next">看關係對照</button>`;
+}
+
+function sRRel(){
+  const R=REL.map(r=>{
+    const a=S.players[0].rel[r.k],b=S.players[1].rel[r.k],same=a===b;
+    return `<tr><td>${r.q.replace('？','')}</td><td>${esc(r.o[a])}</td><td>${esc(r.o[b])}</td><td>${same?'✔':'≠'}</td></tr>`;
+  }).join('');
+  const ca=S.players[0].rel.close,cb=S.players[1].rel.close;
+  const msg=ca===cb?`你們對交情的感覺一致，都是「${REL[2].o[ca]}」。`:`${nm(0)}覺得是「${REL[2].o[ca]}」，${nm(1)}覺得是「${REL[2].o[cb]}」。差一點點也很正常，聊聊各自的標準是什麼。`;
+  return `<h1>我們的關係</h1>
+  <div class="card"><table><tr><th>題目</th><th>${esc(nm(0))}</th><th>${esc(nm(1))}</th><th></th></tr>${R}</table></div>
+  <p class="notice">${esc(msg)}</p>${reactBox('rel')}<button class="btn" data-a="next">抽對話卡</button>`;
+}
+
+function talkCards(){
+  const c=[];
+  for(const g of [0,1]){
+    const t=1-g,sc=score(g),G=S.players[g].guess,T=S.players[t];
+    SCN.forEach((q,i)=>{if(!sc.m[i])c.push({type:'mismatch',tag:q.short,text:`${nm(g)}猜${nm(t)}會選「${q.opts[G.scn[i]]}」，但${nm(t)}其實是「${q.opts[T.self.scn[i]]}」。${nm(t)}說說你的版本，${nm(g)}為什麼會這樣猜？`})});
+    const sd=selfDim(t);let best=0;DIMS.forEach((_,k)=>{if(Math.abs(G.dims[k]-sd[k])>Math.abs(G.dims[best]-sd[best]))best=k});
+    if(Math.abs(G.dims[best]-sd[best])>=1)c.push({type:'mismatch',tag:DIMS[best].n,text:`${nm(g)}覺得${nm(t)}在「${DIMS[best].n}」偏向「${pole(DIMS[best],G.dims[best])}」，但${nm(t)}自己是「${pole(DIMS[best],sd[best])}」。差在哪裡？`});
+    const blind=G.words.filter(w=>!T.self.words.includes(w));
+    if(blind.length)c.push({type:'mismatch',tag:'盲點詞',text:`${nm(g)}覺得${nm(t)}很「${blind[0]}」，但${nm(t)}沒選這個詞。${nm(t)}自己怎麼看？`});
+  }
+  const ca=S.players[0].rel.close,cb=S.players[1].rel.close;
+  if(ca!==cb)c.push({type:'mismatch',tag:'交情',text:`${nm(0)}覺得你們是「${REL[2].o[ca]}」，${nm(1)}覺得是「${REL[2].o[cb]}」。各自說說，是哪些事讓你這樣覺得？`});
+  const fa=selfDim(0),fb=selfDim(1),fric=[];
+  DIMS.forEach((D,k)=>{if(Math.abs(fa[k]-fb[k])>=2)fric.push({type:'fric',tag:'可能的摩擦 · '+D.n,text:`${nm(0)}偏「${pole(D,fa[k])}」，${nm(1)}偏「${pole(D,fb[k])}」。最近有沒有因此卡住過？下次可以先約定什麼？（小提示：${D.tip}）`})});
+  const topic=[];
+  [0,1].forEach(g=>S.players[g].profile.topics.forEach(tp=>(TOPIC_Q[tp]||[]).forEach(q=>topic.push({type:'topic',tag:'想聊 · '+tp,text:`${nm(g)}想聊「${tp}」。${q}`}))));
+  return c.slice(0,9).concat(fric,topic,GENERIC_TALK.map(x=>({...x,type:'generic'})));
+}
+function talkList(){
+  const all=talkCards();
+  const l=S.tcat==='all'?all:all.filter(c=>c.type===S.tcat);
+  return l.length?l:all;
+}
+function hashStr(t){let h=5381;for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;return 'talk-'+(h>>>0).toString(36)}
+function sRTalk(){
+  const cs=talkList(),c=cs[S.talk%cs.length];
+  return `<h1>對話卡</h1><p class="sub">${S.rmode==='online'?'系統根據你們猜錯的地方挑出來。你可以用訊息、視訊聊聊，或直接在下方留言給對方。':'系統根據你們猜錯的地方挑出來。現在可以放下手機，面對面輪流聊；聊完再抽下一張。'}</p>
+  <div class="row" style="margin:8px 0">${TCATS.map(([k,n])=>`<button class="chip ${S.tcat===k?'on':''}" data-a="tcat" data-v="${k}">${n}</button>`).join('')}</div>
+  <div class="talk pop" key="${S.talk}"><span class="tag">${esc(c.tag)}</span><p>${esc(c.text)}</p></div>
+  <p class="small center">第 ${S.talk%cs.length+1} / ${cs.length} 張</p>
+  ${S.rmode==='online'?reactBox(hashStr(c.text)):''}
+  <button class="btn" data-a="talk">再抽一張</button>
+  <button class="btn ghost" data-a="next">結束遊戲</button>`;
+}
+
+const REACTS=['😂','😮','🥹','🤔','❤️','👏'];
+function rkLabel(k){if(k.startsWith('talk-'))return '對話卡';if(k.startsWith('scn'))return SCN[+k.slice(3)].short;return {fric:'摩擦地圖',talk:'對話卡',score:'默契分數',dim:'面向對照',words:'形容詞',rel:'關係對照'}[k]||k}
+function reactText(r){return Object.entries(r||{}).filter(([k,v])=>v&&(v.e||v.t)).map(([k,v])=>rkLabel(k)+':'+(v.e||'')+(v.t?'「'+v.t+'」':'')).join('；')}
+function reactBox(key){
+  const me=S.me,o=1-me,mine=(S.players[me].reacts||{})[key]||{},theirs=(S.players[o].reacts||{})[key];
+  const draft=S.draft[key]!==undefined?S.draft[key]:(mine.t||'');
+  const sent=!!draft.trim()&&draft.trim()===(mine.t||'');
+  return `<div class="card"><b>你的反應</b>
+  <div class="row" style="margin:8px 0">${REACTS.map(e=>`<button class="chip ${mine.e===e?'on':''}" data-a="react" data-k="${key}" data-v="${e}">${e}</button>`).join('')}</div>
+  <textarea data-f="rtext" data-k="${key}" maxlength="80" rows="2" placeholder="想對 ${esc(nm(o))} 說點什麼？（選填）">${esc(draft)}</textarea>
+  <button class="btn sm" data-a="rsend" data-k="${key}" ${draft.trim()&&!sent?'':'disabled'}>${sent?'已送出 ✓':'送出評論'}</button>
+  ${theirs&&(theirs.e||theirs.t)?`<div class="duel pop"><div class="who">${emo(o)} ${esc(nm(o))} 的反應</div><div class="ans">${esc(theirs.e||'')} ${theirs.t?'「'+esc(theirs.t)+'」':''}</div></div>`:''}</div>`;
+}
+function pushReacts(){
+  pushSeat();
+  if(!DB||!S.rec)return;
+  const rec=S.rec,me=S.me,data={sid:rec.sid,seat:me,reacts:S.players[me].reacts||{}};
+  RX[rec.sid+'-'+me]=data;
+  queue(async()=>{try{await DB.doc('reactions/'+rec.sid+'-'+me).set(data)}catch(_){}});
+}
+function typing(){const a=document.activeElement;return !!(a&&a.dataset&&a.dataset.f==='rtext')}
+
+function fbChips(key,list){
+  return `<div class="row">${list.map(v=>`<button class="chip ${S.fb[key]===v?'on':''}" data-a="fb" data-k="${key}" data-v="${v}">${v}</button>`).join('')}</div>`;
+}
+function sREnd(){
+  const c=combined();
+  return `<div class="hero">🎉</div><h1 class="center">玩完了！</h1>
+  <p class="center sub">默契分數 ${c}　·　${tier(c)}</p>
+  ${S.rmode==='online'?`<p class="notice">之後對方留下新的表情或評論，用房間碼 <b>${esc(S.code)}</b> 回到房間就看得到。</p>`:''}
+  <div class="card"><h2 style="margin-top:0">給設計者的測試回饋</h2>
+  <label>整體長度</label>${fbChips('len',['太長','剛好','可以再多一點'])}
+  <label>最有趣的環節</label>${fbChips('fun',['心理測驗','猜猜看','形容詞三區','對話卡'])}
+  <button class="btn sm" data-a="fbsend" ${S.fb.sent?'disabled':''}>${S.fb.sent?'已送出，謝謝':'送出回饋'}</button></div>
+  <button class="btn" data-a="restart">離開房間，回首頁</button>
+  <div class="center"><button class="link" data-a="admin">後台</button></div>`;
+}
+
+/* ===== 後台 ===== */
+let REMOTE=[],FB={},RX={};
+function allRecs(){
+  const m=new Map();
+  [...REMOTE,...LOCAL].forEach(r=>m.set(r.sid,r));
+  return [...m.values()].sort((a,b)=>b.ts-a.ts);
+}
+const fbOf=(r,g)=>FB[r.sid+'-'+g]||{};
+function sAdmin(){
+  let recs=allRecs();
+  if(S.onlyConsent)recs=recs.filter(r=>r.players.every(p=>p.cs));
+  const msg=!DB?'目前沒有資料庫連線，只顯示這次開啟頁面後在本機玩的紀錄。':(CAN?'已連線資料庫：顯示所有場次。':'你不是這個頁面的編輯者，只能看到本機紀錄。');
+  if(DB&&!CAN)recs=recs.filter(r=>LOCAL.some(l=>l.sid===r.sid));
+  const mean=recs.length?Math.round(avg(recs.map(r=>r.scores.combined))):0;
+  const miss=SCN.map((q,i)=>{let n=0,d=0;recs.forEach(r=>{[0,1].forEach(g=>{d++;if(r.players[g].guessScn[i]!==r.players[1-g].scn[i])n++})});return {q:q.short,rate:d?Math.round(n/d*100):0}});
+  return `<div class="top"><button class="link" data-a="back">← 返回</button></div>
+  <h1>後台</h1><p class="notice">${msg}</p>
+  <div class="stat"><div><b>${recs.length}</b>場次</div><div><b>${mean}</b>平均默契</div><div><b>${recs.filter(r=>r.players.every(p=>p.cs)).length}</b>同意展出</div></div>
+  <label class="check"><input type="checkbox" data-f="onlyConsent" ${S.onlyConsent?'checked':''}> 只顯示兩位都同意展出的場次</label>
+  <h2>最常猜錯的題目</h2>
+  ${miss.map(m=>`<div class="small">${esc(m.q)}　${m.rate}%</div><div class="pbar"><i style="width:${m.rate}%"></i></div>`).join('')}
+  <h2>場次列表</h2>
+  ${recs.length?recs.map(r=>{const f=[0,1].map(g=>fbOf(r,g)).filter(x=>x.len||x.fun).map(x=>esc((x.len||'')+' '+(x.fun||''))).join(' ／ ');
+    return `<div class="card"><b>${esc(r.players[0].emoji)} ${esc(r.players[0].name)} × ${esc(r.players[1].emoji)} ${esc(r.players[1].name)}</b>
+    <div class="small">${new Date(r.ts).toLocaleString('zh-TW')}${r.event?'　·　'+esc(r.event):''}　·　${r.mode==='online'?'🌐 線上':'🤝 線下'}</div>
+    <div class="small">默契 ${r.scores.combined}（${esc(r.players[0].name)}→${r.scores.a}，${esc(r.players[1].name)}→${r.scores.b}）</div>
+    ${f?`<div class="small">回饋：${f}</div>`:''}
+    ${[0,1].map(g=>reactText((RX[r.sid+'-'+g]||{}).reacts)?`<div class="small">${esc(r.players[g].name)} 的反應：${esc(reactText((RX[r.sid+'-'+g]||{}).reacts))}</div>`:'').join('')}</div>`}).join(''):'<p class="small">還沒有紀錄。玩完一場就會出現。</p>'}
+  <button class="btn" data-a="csv" ${recs.length&&dlOK?'':'disabled'}>匯出 CSV</button>
+  ${dlOK?'':'<p class="small">此環境無法下載檔案，CSV 匯出已停用。</p>'}`;
+}
+function csvOf(recs){
+  const h=['時間','場次','玩家','暱稱','狀態','興趣','想聊話題','一句話','同意研究','同意展出',
+    ...DIMS.map(d=>'自評_'+d.n),'自選形容詞',...SCN.map(q=>'自答_'+q.short),
+    ...DIMS.map(d=>'猜對方_'+d.n),...SCN.map(q=>'猜對方_'+q.short),'猜對方形容詞',
+    ...REL.map(r=>'關係_'+r.q),'玩法','情境猜中數','該玩家默契分','雙人默契','回饋_長度','回饋_最有趣','反應與評論','題庫版本','MBTI風格_自評'];
+  const rows=[];
+  recs.forEach(r=>[0,1].forEach(g=>{
+    const p=r.players[g],f=fbOf(r,g);
+    rows.push([new Date(r.ts).toISOString(),r.event,g+1,p.name,p.status,p.interests.join('、'),p.topics.join('、'),p.line,p.cr?'是':'否',p.cs?'是':'否',
+      ...p.dims.map(v=>v.toFixed(1)),p.words.join('、'),...p.scn.map((v,i)=>SCN[i].opts[v]),
+      ...p.guessDims,...p.guessScn.map((v,i)=>SCN[i].opts[v]),p.guessWords.join('、'),
+      ...REL.map(x=>x.o[p.rel[x.k]]),r.mode==='online'?'線上':'線下',r.scores.hit[g],g?r.scores.b:r.scores.a,r.scores.combined,f.len||'',f.fun||'',reactText((RX[r.sid+'-'+g]||{}).reacts),r.bank||'v1',mbtiOf(p.dims)]);
+  }));
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  return '\ufeff'+[h,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+}
+
+/* ===== 房間與同步 ===== */
+const seatId=i=>i?'b':'a';
+function buildRec(){
+  const a=score(0),b=score(1);
+  return {sid:S.code+'-'+S.created,ts:S.created||Date.now(),event:EVENT,mode:S.rmode,bank:'v2',
+    players:S.players.map((P,i)=>({name:nm(i),emoji:P.profile.emoji,status:P.profile.status,interests:P.profile.interests,topics:P.profile.topics,line:P.profile.line,
+      cr:P.profile.cr,cs:P.profile.cs,dims:selfDim(i),words:P.self.words,scn:P.self.scn,
+      guessDims:P.guess.dims,guessScn:P.guess.scn,guessWords:P.guess.words,rel:P.rel})),
+    scores:{a:a.sc,b:b.sc,combined:combined(),hit:[a.hit,b.hit]}};
+}
+function pushSeat(){
+  if(!DB||S.me<0)return;
+  const code=S.code,me=S.me,data={p:S.players[me],f:{...S.myF},ts:Date.now()};
+  return queue(async()=>{try{await DB.doc(`rooms/${code}/seats/${seatId(me)}`).set(data)}catch(e){S.err='資料寫入失敗，可能沒有貢獻者權限。';render(true)}});
+}
+function pushSync(){
+  if(!DB||!S.code||S.rmode!=='offline')return;
+  const code=S.code,data={step:S.revStep,rv:[...S.rv],talk:S.talk,tcat:S.tcat,ts:Date.now()};
+  return queue(async()=>{try{await DB.doc(`rooms/${code}/sync/s`).set(data)}catch(e){S.err='同步失敗，請確認網路。';render(true)}});
+}
+function subscribe(){
+  const code=S.code;
+  S.unsubs.push(DB.collection(`rooms/${code}/seats`).onSnapshot(snap=>{
+    if(S.code!==code)return;
+    snap.docs.forEach(d=>{
+      if(d.id==='a')S.seen.a=true;if(d.id==='b')S.seen.b=true;
+      const idx=d.id==='a'?0:1;if(idx===S.me)return;
+      const x=d.data();if(x&&x.p){S.players[idx]=normalize(x.p);S.flags[idx]=x.f||{};if(S.rec)RX[S.rec.sid+'-'+idx]={sid:S.rec.sid,seat:idx,reacts:S.players[idx].reacts}}
+    });
+    if(S.mode==='reveal'&&!typing())render(true);
+    if(S.mode==='room'&&['lobby','wait-prof','wait-done'].includes(S.steps[S.step].t))checkAuto();
+  },()=>{S.err='同步連線中斷，請重新整理頁面。';render(true)}));
+  if(S.rmode==='offline')S.unsubs.push(DB.doc(`rooms/${code}/sync/s`).onSnapshot(snap=>{
+    if(S.code!==code||!snap.exists)return;
+    const x=snap.data()||{};
+    const stepChanged=(x.step||0)!==S.revStep;
+    S.revStep=x.step||0;S.rv=Array.isArray(x.rv)?x.rv.slice(0,SCN.length).concat(Array(SCN.length).fill(false)).slice(0,SCN.length):S.rv;S.talk=x.talk||0;S.tcat=x.tcat||'all';
+    if(S.mode==='reveal')render(!stepChanged);
+  },()=>{}));
+}
+function checkAuto(){
+  if(S.mode!=='room')return;
+  const st=S.steps[S.step],o=1-S.me;
+  if(st.t==='lobby'){if(S.rmode==='offline'&&S.seen.a&&S.seen.b){go(1);return}render(true);return}
+  if(st.t==='wait-prof'&&S.flags[o].profileDone){go(1);return}
+  if(st.t==='wait-done'&&S.flags[o].done&&S.myF.done){enterReveal();return}
+  render(true);
+}
+function enterReveal(){
+  S.mode='reveal';S.revStep=0;
+  S.rec=buildRec();LOCAL.push(S.rec);
+  if(!S.saved){
+    S.saved=true;const rec=S.rec;
+    queue(async()=>{try{await DB.doc('sessions/'+rec.sid).set(rec)}catch(e){}});
+  }
+  render(false);
+}
+async function createRoom(){
+  S.busy=true;S.joinErr='';render(true);
+  try{
+    let code='';
+    for(let k=0;k<6&&!code;k++){const c=String(Math.floor(10000+Math.random()*90000));const r=await DB.doc('rooms/'+c).get();if(!r.exists)code=c}
+    if(!code)throw new Error('no code');
+    const created=Date.now();
+    await DB.doc('rooms/'+code).set({created,event:EVENT,mode:HOMEMODE||'offline'});
+    const ev=EVENT;S=fresh();EVENT=ev;
+    S.rmode=HOMEMODE||'offline';S.code=code;S.created=created;S.me=0;S.mode='room';S.steps=buildSteps(0);S.seen.a=true;
+    await DB.doc(`rooms/${code}/seats/a`).set({p:S.players[0],f:{},ts:Date.now()});
+    subscribe();render(false);
+  }catch(e){S.busy=false;S.joinErr='建立房間失敗（錯誤代碼：'+(e&&e.code||e&&e.message||'未知')+'）。常見原因是這個帳號對頁面沒有寫入權限。';render(true)}
+}
+async function joinRoom(){
+  const code=JOINCODE.replace(/\D/g,'');
+  if(code.length!==5){S.joinErr='請輸入 5 位數房間碼。';render(true);return}
+  S.busy=true;S.joinErr='';render(true);
+  try{
+    const r=await DB.doc('rooms/'+code).get();
+    if(!r.exists){S.busy=false;S.joinErr='找不到這個房間，請再確認房間碼。';render(true);return}
+    const b=await DB.doc(`rooms/${code}/seats/b`).get();
+    if(b.exists){S.busy=false;S.joinErr='這個房間已經有兩個人了。';render(true);return}
+    const info=r.data()||{};
+    S=fresh();
+    EVENT=info.event||'';S.rmode=info.mode||'offline';S.code=code;S.created=info.created||Date.now();S.me=1;S.mode='room';S.steps=buildSteps(1);S.seen.b=true;
+    await DB.doc(`rooms/${code}/seats/b`).set({p:S.players[1],f:{},ts:Date.now()});
+    subscribe();render(false);
+  }catch(e){S.busy=false;S.joinErr='加入失敗（錯誤代碼：'+(e&&e.code||e&&e.message||'未知')+'）。常見原因是這個帳號對頁面沒有寫入權限。';render(true)}
+}
+async function resumeRoom(seat){
+  const code=JOINCODE.replace(/\D/g,'');
+  if(code.length!==5){S.joinErr='請輸入 5 位數房間碼。';render(true);return}
+  S.busy=true;S.joinErr='';render(true);
+  try{
+    const r=await DB.doc('rooms/'+code).get();
+    if(!r.exists){S.busy=false;S.joinErr='找不到這個房間，請再確認房間碼。';render(true);return}
+    const sd=await DB.doc(`rooms/${code}/seats/${seatId(seat)}`).get();
+    if(!sd.exists){S.busy=false;S.joinErr='這個房間裡還沒有第 '+(seat+1)+' 位。';render(true);return}
+    const info=r.data()||{},x=sd.data()||{};
+    S=fresh();
+    EVENT=info.event||'';S.rmode=info.mode||'offline';S.code=code;S.created=info.created||Date.now();S.me=seat;S.mode='room';S.steps=buildSteps(seat);
+    S.players[seat]=normalize(x.p);S.myF={profileDone:false,done:false,...(x.f||{})};
+    const idx=t=>S.steps.findIndex(z=>z.t===t);
+    S.step=!S.myF.profileDone?idx('profile'):!S.myF.selfDone?idx('likert'):!S.myF.done?idx('wait-prof'):idx('wait-done');
+    subscribe();render(false);
+    if(['wait-prof','wait-done'].includes(S.steps[S.step].t))checkAuto();
+  }catch(e){S.busy=false;S.joinErr='回到房間失敗（錯誤代碼：'+(e&&e.code||e&&e.message||'未知')+'）。';render(true)}
+}
+function leaveRoom(){S.unsubs.forEach(u=>{try{u()}catch(_){}});const ev=EVENT;S=fresh();EVENT=ev;JOINCODE='';render(false)}
+
+/* ===== 事件 ===== */
+function go(n){
+  const cur=S.steps[S.step];
+  if(n>0&&cur){
+    if(cur.t==='profile'){S.myF.profileDone=true;pushSeat()}
+    if(cur.t==='card'){S.myF.selfDone=true;pushSeat()}
+    if(cur.t==='rel'){S.myF.done=true;pushSeat()}
+  }
+  S.step=Math.max(0,Math.min(S.steps.length-1,S.step+n));
+  render(false);
+  if(['lobby','wait-prof','wait-done'].includes(S.steps[S.step].t))checkAuto();
+}
+function advance(){if(lock)return;lock=true;setTimeout(()=>{lock=false;go(1)},220)}
+function toggle(arr,v,max){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else if(arr.length<max)arr.push(v)}
+async function loadRemote(){
+  if(!DB||!CAN)return;
+  try{const snap=await DB.collection('sessions').get();REMOTE=snap.docs.map(d=>d.data()).filter(x=>x&&x.sid)}catch(e){}
+  try{const rx=await DB.collection('reactions').get();rx.docs.forEach(d=>{const x=d.data();if(x&&x.sid)RX[x.sid+'-'+x.seat]=x})}catch(e){}
+  try{const f=await DB.collection('feedback').get();FB={};f.docs.forEach(d=>{const x=d.data();if(x&&x.sid)FB[x.sid+'-'+x.seat]=x})}catch(e){}
+}
+
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  const d=b.dataset,p=+d.p,i=+d.i,v=d.v;
+  switch(d.a){
+    case 'create':createRoom();break;
+    case 'join':joinRoom();break;
+    case 'resume':resumeRoom(+d.v);break;
+    case 'hm':HOMEMODE=d.v;S.joinErr='';render(false);break;
+    case 'next':
+      if(S.mode==='reveal'){S.revStep=Math.min(REV.length-1,S.revStep+1);pushSync();render(false)}
+      else go(1);
+      break;
+    case 'emoji':S.players[p].profile.emoji=v;render(true);break;
+    case 'status':S.players[p].profile.status=S.players[p].profile.status===v?'':v;render(true);break;
+    case 'tog':toggle(S.players[p].profile[d.f],v,+d.max);render(true);break;
+    case 'lk':S.players[p].self.lk[i]=+v;render(true);advance();break;
+    case 'scn':S.players[p].self.scn[i]=+v;render(true);advance();break;
+    case 'gscn':S.players[p].guess.scn[i]=+v;render(true);advance();break;
+    case 'gdim':S.players[p].guess.dims[+d.k]=+v;render(true);break;
+    case 'word':toggle(S.players[p][d.m==='guess'?'guess':'self'].words,v,5);render(true);break;
+    case 'rel':S.players[p].rel[d.k]=+v;render(true);break;
+    case 'reveal':S.rv[i]=true;pushSync();render(true);break;
+    case 'share':
+      try{if(navigator.share){await navigator.share({title:'我們怎麼看彼此',text:inviteText()});S.inv=''}else{S.inv='這個瀏覽器不支援分享選單，請用「複製邀請訊息」。'}}catch(err){if(err&&err.name!=='AbortError')S.inv='分享選單開不起來，請用「複製邀請訊息」。'}
+      render(true);break;
+    case 'copyinv':{
+      let ok=false;
+      try{await navigator.clipboard.writeText(inviteText());ok=true}catch(_){}
+      if(!ok){try{const ta=document.getElementById('invtext');ta.removeAttribute('readonly');ta.select();ok=document.execCommand('copy');ta.setAttribute('readonly','')}catch(_){}}
+      S.inv=ok?'已複製，貼到 IG、LINE 或任何地方傳給對方。':'無法自動複製，請長按上方文字框手動複製。';render(true);break}
+    case 'tcat':S.tcat=v;S.talk=0;pushSync();render(true);break;
+    case 'talk':S.talk++;pushSync();render(true);break;
+    case 'react':{const R=S.players[S.me].reacts=S.players[S.me].reacts||{};const m=R[d.k]||{};R[d.k]={...m,e:m.e===v?'':v};pushReacts();render(true);break}
+    case 'rsend':{const R=S.players[S.me].reacts=S.players[S.me].reacts||{};const m=R[d.k]||{};R[d.k]={...m,t:(S.draft[d.k]||'').trim()};pushReacts();render(true);break}
+    case 'restart':leaveRoom();break;
+    case 'admin':S.admin=true;render(false);await loadRemote();render(true);break;
+    case 'back':S.admin=false;render(false);break;
+    case 'fb':if(!S.fb.sent){S.fb[d.k]=v;render(true)}break;
+    case 'fbsend':
+      if(S.rec&&DB){const rec=S.rec,me=S.me,fb={sid:rec.sid,seat:me,len:S.fb.len,fun:S.fb.fun};queue(async()=>{try{await DB.doc('feedback/'+rec.sid+'-'+me).set(fb)}catch(_){}})}
+      S.fb.sent=true;render(true);break;
+    case 'csv':
+      try{const dl=await claude.use('downloads');if(dl)await dl.save({filename:'we-see-each-other.csv',data:csvOf(allRecs().filter(r=>(!S.onlyConsent||r.players.every(p=>p.cs))&&(!DB||CAN||LOCAL.some(l=>l.sid===r.sid))))})}catch(_){}
+      break;
+  }
+});
+document.addEventListener('input',e=>{
+  const t=e.target,f=t.dataset.f;if(!f)return;
+  if(f==='event'){EVENT=t.value;return}
+  if(f==='joincode'){JOINCODE=t.value;return}
+  if(f==='rtext'){const k=t.dataset.k;S.draft[k]=t.value;const mine=((S.players[S.me].reacts||{})[k]||{}).t||'';const bt=document.querySelector('[data-a="rsend"][data-k="'+k+'"]');if(bt){bt.disabled=!t.value.trim()||t.value.trim()===mine;bt.textContent='送出評論'}return}
+  const p=+t.dataset.p;
+  if(f==='name'){S.players[p].profile.name=t.value;const btn=document.getElementById('pf-next');if(btn)btn.disabled=!t.value.trim()}
+  if(f==='line')S.players[p].profile.line=t.value;
+});
+document.addEventListener('change',e=>{
+  const t=e.target,f=t.dataset.f;if(!f)return;
+  if(f==='cr'||f==='cs')S.players[+t.dataset.p].profile[f]=t.checked;
+  if(f==='onlyConsent'){S.onlyConsent=t.checked;render(true)}
+});
+
+/* ===== 啟動與能力偵測 ===== */
+render(false);
+(async()=>{
+  try{
+    if(typeof claude==='undefined'){DBSTATE='none';return}
+    DB=await claude.use('db');
+    const u=await claude.use('user');
+    CAN=u?await u.canEdit():false;
+    WRITE=u?await u.can('data.write'):null;
+    const dl=await claude.use('downloads');dlOK=!!dl;
+    DBSTATE=DB?'ok':'none';
+  }catch(e){DBSTATE='none'}
+  if(S.mode==='home'&&!S.admin)render(true);
+})();
+</script>
+</body>
+</html>
