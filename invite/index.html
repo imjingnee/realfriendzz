@@ -73,7 +73,6 @@ textarea{resize:vertical;line-height:1.6}
 .card .ln{margin:10px 0 0;font-size:1rem}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;margin-top:16px;padding-top:14px;border-top:2px dashed var(--line);font-size:.9rem}
 .kv dt{color:var(--sub)}.kv dd{margin:0}
-.banner{background:#F3DFA6;border:2px solid #B8962E;color:#6B5110;border-radius:8px;padding:10px 12px;font-size:.84rem;margin:0 0 14px}
 .note{font-size:.84rem;color:var(--sub);border-top:2px solid var(--line);margin-top:22px;padding-top:12px}
 .grp{font-family:var(--serif);font-size:1.02rem;color:var(--accent);margin:20px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
@@ -101,18 +100,14 @@ textarea{resize:vertical;line-height:1.6}
 #scene .walker.idle .legB{animation:none;opacity:0}
 @keyframes legA{0%{opacity:1}50%{opacity:0}}
 @keyframes legB{0%{opacity:0}50%{opacity:1}}
-#scene .planet{position:absolute;right:0;bottom:var(--bh);width:56px;height:52px}
-#scene .planet svg{animation:sway 2s steps(2) infinite}
 @keyframes sway{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 #scene .eye{display:none}
-#scene .planet.five .eye{display:block;animation:glow .5s steps(1) infinite}
 @keyframes glow{0%{opacity:1}50%{opacity:.35}}
 #scene .walker.five{animation:jump .6s steps(3) 2}
 @keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-16px)}100%{transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){
   #scene .walker{transition:none}
-  #scene .walker svg,#scene .planet svg,#scene .legA,#scene .legB,#scene .b.pop,#scene .walker.five,#scene .planet.five .eye{animation:none}
-  #scene .legB{opacity:0}
+  #scene .walker svg,  #scene .legB{opacity:0}
 }
 </style>
 </head>
@@ -122,7 +117,6 @@ textarea{resize:vertical;line-height:1.6}
 /* ===== 主辦人設定：只需要改這一區 ===== */
 const CONFIG={
   title:'見面邀請',
-  confirmed:false,   // ★ 換成真實資料後改 true，頁面上的「預覽版」橫幅就會消失
   igUser:'imjingnee',         // ★ 你的 IG 帳號（不含 @），填了結果頁才會有「複製並開 IG 私訊」按鈕
   /* Firebase 網頁設定（公開用途，保護資料靠 Firestore 安全規則）。填了才會出現「直接傳給我」按鈕 */
   firebase:{apiKey:"AIzaSyDTdfkDYqruftnP8PSI0fZMyevxMuauBuo",authDomain:"realfriendzz.firebaseapp.com",projectId:"realfriendzz",storageBucket:"realfriendzz.firebasestorage.app",messagingSenderId:"891568132632",appId:"1:891568132632:web:caea74823784a38bd0e96d"},
@@ -134,16 +128,6 @@ const CONFIG={
     {city:'關丹',when:[{d:'2026-12-17',note:'晚上'},{d:'2026-12-18',note:'晚上'},{d:'2026-12-19',note:'晚上'},{d:'2026-12-20',note:'晚上'},{d:'2026-12-21',note:'早上'}]},
     {city:'馬六甲',when:[{d:'2026-12-22',note:'早、午、晚'}]},
     {city:'古來',when:[{d:'2026-12-23',note:'早、午、晚'},{d:'2026-12-24',note:'早、午、晚'}]}
-  ],
-
-  /* ★ 「猜猜我」的答案：answer 是正確選項的順序（從 0 開始），note 是揭曉時多說的一句話（選填） */
-  guess:[
-    {q:'約吃飯的時候，你覺得我比較喜歡？',opts:['安靜好聊天','熱鬧有氣氛','有特色的店','隨便吃就好'],answer:0,note:''},
-    /* answer 可以是一個數字，也可以是一串數字（有多個正確答案） */
-    {q:'你覺得我最近最忙的是什麼？',opts:['生活雜事','工作','創作計畫','學業或研究','創業'],answer:[2,3,4],note:''},
-    {q:'你覺得我心情不好的時候，最常做的是？',opts:['一個人安靜待著','找人聊聊','吃好吃的','睡一覺','做喜歡的事'],answer:0,note:'我還在學習如何求救！希望有一天我心情不好的時候是來找你分享啊我的朋友！'},
-    /* answer:null 代表這題沒有標準答案（每個朋友不同），不計分，只會記錄在回傳訊息裡 */
-    {q:'你覺得你是我的什麼？',opts:['點頭之交（見面會打招呼）','一般朋友（會一起吃飯、聊特定話題）','好朋友（會私下約、知道彼此近況）','摯友（可以不客套，做自己）','知己（很久沒聯絡，見面也像沒分開）'],answer:null,note:'不管你是什麼，當你收到這份邀請卡，就意味著你一定是我生命某個階段很重要的人。'}
   ]
 };
 
@@ -366,9 +350,9 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 })();
 
 /* ===== 狀態 ===== */
-const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
+const STEPS=['intro','who','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -384,11 +368,6 @@ function fmtWhen(w){
   if(w.note)t+=` ${w.note}`;
   return t;
 }
-const scored=()=>CONFIG.guess.filter(g=>g.answer!=null).length;
-const isRight=(g,v)=>Array.isArray(g.answer)?g.answer.includes(v):v===g.answer;
-const ansText=g=>(Array.isArray(g.answer)?g.answer:[g.answer]).map(k=>g.opts[k]).join('、');
-const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.guess[i],v)).length;
-const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
 function dateLabels(){
@@ -442,9 +421,7 @@ function msg(){
     `喜歡的氣氛：${VIBE[A.vibe]}`,
     `想聊：${A.topic.length?pick(TOPIC,A.topic):'都可以'}`,
     `見面時的我：${ARR[A.arrive]}`,
-    `我的赴約角色：${r.n}`,
-    `猜猜我：猜中 ${hits()} / ${scored()}`,
-    openAns()?`你覺得你是我的：${openAns()}`:null
+    `我的赴約角色：${r.n}`
   ].filter(Boolean).join('\n');
 }
 
@@ -466,16 +443,13 @@ function canNext(id){
   if(id==='format')return A.format>=0;
   if(id==='vibe')return A.vibe>=0;
   if(id==='arrive')return A.arrive>=0;
-  if(id.startsWith('g'))return A.g[+id[1]]>=0;
   return true;
 }
-const banner=()=>CONFIG.confirmed?'':'<div class="banner">預覽版：行程與「猜猜我」的答案目前是範例，主辦人確認後才會正式發出。</div>';
 function dateBtn(k,text){
   return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}">${esc(text)}</button>`;
 }
 function view(id){
   if(id==='intro')return `
-    ${banner()}
     <h1>我們來見面吧！</h1>
     <p>${esc(CONFIG.intro)}</p>
     <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
@@ -488,18 +462,6 @@ function view(id){
     ${opts(REL,A.rel,'rel')}
     ${A.rel===REL.length-1?`<label class="f" for="ro">那你是我的…？（選填）</label><input id="ro" type="text" maxlength="20" placeholder="你來說" value="${esc(A.relOther)}" data-i="relOther">`:''}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id[0]==='g'){
-    const i=+id[1],g=CONFIG.guess[i],done=A.g[i]>=0,open=g.answer==null,ok=!open&&isRight(g,A.g[i]);
-    const list=`<div class="stack">${g.opts.map((t,k)=>{
-      let c='';if(done){if(open){if(k===A.g[i])c='on'}else if(isRight(g,k))c='right';else if(k===A.g[i])c='wrong'}
-      return `<button type="button" class="opt ${c}" data-a="guess" data-v="${k}" ${done?'disabled':''}>${esc(t)}</button>`}).join('')}</div>`;
-    return `
-    ${banner()}
-    <p class="small">慢慢來比較快</p>
-    <h2>${esc(g.q)}</h2>${list}
-    ${done?`<div class="reveal">${open?`<b class="ok">謝謝你告訴我，</b>${esc(g.note)}`:ok?'<b class="ok">天啊你也太了解我了吧！</b>':`<b class="no">啊啊啊沒事！</b>其實是「${esc(ansText(g))}」。`}${g.note&&!open?`<br>${esc(g.note)}`:''}</div>
-    <button class="btn" data-a="next">${i<CONFIG.guess.length-1?'LET\'S GO':'快來拿邀請卡！'}</button>`:''}`;
-  }
   if(id==='city')return `<p class="small">見面卡 1 / ${CARD_N}</p><h2>你想要在哪個城市見到我？</h2>
     ${opts(CONFIG.trips.map(t=>t.city).concat(['其他城市']),A.city,'city')}
     ${isOther()?`<label class="f" for="co">你在哪裡？（選填）</label><input id="co" type="text" maxlength="20" placeholder="例如：新加坡" value="${esc(A.cityOther)}" data-i="cityOther">
@@ -508,7 +470,7 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`${banner()}<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
     CONFIG.trips.forEach((t,ci)=>{
       if(!(showAll||ci===home))return;
       html+=`<div class="grp">${esc(t.city)}</div><div class="stack">${t.when.map((w,wi)=>dateBtn(`c${ci}d${wi}`,fmtWhen(w))).join('')}</div>`;
@@ -532,7 +494,6 @@ function view(id){
     <button class="btn" data-a="next">看我的見面卡</button>`;
   if(id==='result'){
     const r=role(),m=msg();
-    const line=`https://line.me/R/msg/text/?${encodeURIComponent(m)}`;
     return `
     <h2>你的見面卡</h2>
     <div class="card">
@@ -546,7 +507,6 @@ function view(id){
         <dt>方式</dt><dd>${esc(FORMAT[A.format])}</dd>
         <dt>氣氛</dt><dd>${esc(VIBE[A.vibe])}</dd>
         <dt>想聊</dt><dd>${A.topic.length?esc(A.topic.map(i=>TOPIC[i]).join('、')):'都可以'}</dd>
-        <dt>猜猜我</dt><dd>猜中 ${hits()} / ${scored()}</dd>
       </dl>
     </div>
     <p class="small">小王子角色只是好玩的分類，不是正式測驗。</p>
@@ -555,7 +515,6 @@ function view(id){
     ${CONFIG.firebase?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
     <div class="btnrow">
       ${CONFIG.igUser?`<a class="btn" data-a="igcopy" href="https://ig.me/m/${encodeURIComponent(CONFIG.igUser)}" target="_blank" rel="noopener">複製並開 IG 私訊</a>`:''}
-      <a class="btn ${CONFIG.igUser?'ghost':''}" href="${line}" target="_blank" rel="noopener">用 LINE 傳</a>
       <button type="button" class="btn ghost" data-a="copy">複製訊息</button>
       <button type="button" class="btn ghost" data-a="share">分享…</button>
     </div>
@@ -577,42 +536,23 @@ function walkerSvg(){
   const B=A.map(r=>r.split('').reverse().join(''));
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
 }
-function planetSvg(){
-  const cx=13.5,cy=5.5,rx=13.6,ry=5.8,oy=14;
-  const inE=(x,y,ex,ey,ax,ay)=>{const dx=(x-ex)/ax,dy=(y-ey)/ay;return dx*dx+dy*dy<=1};
-  let o='';
-  for(let y=0;y<12;y++)for(let x=0;x<28;x++){
-    const u=(x-cx)/rx,v=(y-cy)/ry,d=Math.sqrt(u*u+v*v);if(d>1)continue;
-    let c='#5A8FB0';
-    if(u*0.8+v<-0.55)c='#7AB0CF';else if(u*0.5+v>0.45)c='#46758F';
-    if(inE(x,y,7,4,3.2,1.5)||inE(x,y,19,7,3.6,1.7)||inE(x,y,12,8,2.2,1.1)||inE(x,y,23,3,2,1))c=v>0.4?'#5F8F4C':'#7FB069';
-    if((x>=14&&x<=16&&y===2)||(x>=4&&x<=5&&y===7))c='#E8F1F5';
-    if(d>0.88)c='#2F5A73';
-    o+=pxRect(x,y+oy,1,1,c);
-  }
-  o+=pxRect(0,6,1,1,'#F2C94C')+pxRect(27,10,1,1,'#F2C94C');
-  const M={G:'#A8A8A0',g:'#9A9A92',d:'#7A7A72',D:'#3A3A34',M:'#5A5A54'};
-  const moai=["..gGGGGGGg..","..GGGGGGgd..","..GGGGGGgd..","..GDDGGDDgd.","..GDDGGDDgd.","..GGGGGGggd.","..GGGddGgd..","..GGGddGgd..","..GGGddGgd..","..GGGGGGgd..","..GGMMMMgd..","..GGGGGGgd..","...GGGGgd...","..GGGGGGGgd.","..GGGGGGGgd.","..GGGGGGGgd."];
-  o+=pxSprite(moai,M,8,0)+pxRect(11,3,2,2,'#FFE27A','eye')+pxRect(15,3,2,2,'#FFE27A','eye')+pxRect(11,3,1,1,'#fff','eye')+pxRect(15,3,1,1,'#fff','eye');
-  return '<svg viewBox="0 0 28 26">'+o+'</svg>';
-}
 let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
   const el=document.getElementById('scene');if(!el)return;
   const B=STEPS.length-1;
-  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
   sceneReady=true;
   window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
 }
 function updateScene(silent){
   if(!sceneReady)return;
-  const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
+  const el=document.getElementById('scene'),w=document.getElementById('walker');
   const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
   for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-92)*Math.min(step,B)/B)+'px';
-  w.classList.remove('idle','five');pl.classList.remove('five');
+  w.style.left=((tw-36)*Math.min(step,B)/B)+'px';
+  w.classList.remove('idle','five');
   clearTimeout(sceneTimer);
-  sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
+  sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five')}},750);
   el.setAttribute('aria-valuenow',String(Math.round(step/B*100)));
   scenePrev=step;
 }
@@ -633,7 +573,6 @@ document.addEventListener('click',async e=>{
     case 'next':if(canNext(STEPS[step])){step=Math.min(STEPS.length-1,step+1);A.hint='';render(false)}break;
     case 'prev':step=Math.max(0,step-1);render(false);break;
     case 'rel':A.rel=v;render(true);break;
-    case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
     case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false}render(true);break;
     case 'showall':A.showAll=true;render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
@@ -670,20 +609,18 @@ document.addEventListener('click',async e=>{
           format:FORMAT[A.format],
           invitees:groupOK()?A.invitees.slice(0,5):[],
           role:r.n,
-          guessHits:hits(),
-          guessTotal:scored(),
           message:msg()
         });
         A.sent=true;
       }catch(err){
         console.error(err);
-        A.hint='直接傳送失敗了，請改用下面的 IG／LINE／複製。';
+        A.hint='直接傳送失敗了，請改用下面的 IG／複製。';
       }
       A.sending=false;render(true);break}
     case 'share':{
       let done=false;
       try{if(navigator.share){await navigator.share({text:msg()});done=true;A.hint=''}}catch(err){if(err&&err.name==='AbortError')done=true}
-      if(!done)A.hint='這個瀏覽器開不了分享選單，請用「複製訊息」或「用 LINE 傳」。';
+      if(!done)A.hint='這個瀏覽器開不了分享選單，請用「複製訊息」。';
       render(true);break}
   }
 });
