@@ -1,0 +1,17 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 邀請卡回覆：已（匿名）登入者只能新增；網頁端不能讀、改、刪（用主控台看資料）
+    match /invites/{id} {
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['createdAt','name','relation','city','dates','format','role','guessHits','guessTotal','message'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
+        && request.resource.data.message is string && request.resource.data.message.size() <= 2000;
+      allow read, update, delete: if false;
+    }
+    // 其他集合（含主遊戲）預設全部拒絕；主遊戲規則之後再依 docs/security-rules-plan.md 補上
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

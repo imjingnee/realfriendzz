@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>約見面邀請卡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
+<style>
+/* 牛皮紙冒險書：暖色紙底、墨褐色邊框、方塊像素小動畫。手機優先的單欄，一次只問一件事。 */
+:root{
+  --kraft:#D8BD92; --panel:#ECD9B4; --paper:#F6ECD2; --line:#A8895A; --edge:#8A6A40; --shade:#B79A6A;
+  --ink:#4A3320; --sub:#7A5C38; --accent:#8A5A2B;
+  --gold:#B8864B; --gold-ink:#FFF8E8; --ok:#4D7A3A; --no:#B3412F;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --bh:34px;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{
+  background-color:var(--kraft);
+  background-image:
+    radial-gradient(rgba(120,80,30,.10) 1px,transparent 1px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 2px,transparent 2px 9px);
+  background-size:6px 6px,auto;
+  background-attachment:fixed;
+  color:var(--ink);font-family:var(--sans);line-height:1.65;min-height:100%;
+}
+.wrap{max-width:480px;margin:0 auto;padding:16px 18px 56px}
+h1,h2,.serif{font-family:var(--serif);text-wrap:balance}
+h1{font-size:1.7rem;line-height:1.35;margin:.2em 0 .4em}
+h2{font-size:1.28rem;line-height:1.45;margin:.2em 0 .6em;font-weight:700}
+p{margin:.5em 0}
+.sub{color:var(--sub);font-size:.94rem}
+.small{color:var(--sub);font-size:.82rem}
+.top{display:flex;align-items:center;margin:0 0 10px}
+.back{background:none;border:0;color:var(--sub);font:inherit;font-size:.9rem;cursor:pointer;padding:6px 2px}
+.back:focus-visible,.opt:focus-visible,.btn:focus-visible,a.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.date{display:flex;align-items:baseline;gap:10px;margin:14px 0 4px}
+.date b{font-family:var(--serif);font-size:3.4rem;line-height:1;color:var(--accent)}
+.date span{color:var(--sub)}
+.panel{background:var(--panel);border:2px solid var(--edge);border-radius:8px;padding:16px;box-shadow:0 4px 0 var(--shade)}
+.stack{display:flex;flex-direction:column;gap:10px}
+.opt{display:block;width:100%;text-align:left;font:inherit;font-size:1rem;color:var(--ink);background:var(--panel);
+  border:2px solid var(--edge);border-radius:8px;padding:13px 16px;cursor:pointer;box-shadow:0 3px 0 var(--shade)}
+.opt.on{border-color:var(--ink);background:#F3E2B8;font-weight:700;transform:translateY(2px);box-shadow:0 1px 0 var(--shade)}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:#DCEBC9}
+.opt.wrong{border-color:var(--no);background:#F2D3C6}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:1.02rem;
+  background:var(--gold);color:var(--gold-ink);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;margin-top:18px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--edge);margin-top:10px;box-shadow:none}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px}
+.btnrow .btn{flex:1 1 140px;margin-top:10px}
+label.f{display:block;font-weight:700;font-size:.92rem;margin:18px 0 6px}
+input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--paper);border:2px solid var(--line);border-radius:8px;padding:12px 14px}
+textarea{resize:vertical;line-height:1.6}
+.reveal{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--paper);border:2px solid var(--line)}
+.reveal b.ok{color:var(--ok)}.reveal b.no{color:var(--no)}
+.card{text-align:center;background:linear-gradient(160deg,#F3E2B8,#E5CF9F);border:2px solid var(--accent);border-radius:10px;padding:22px 18px;margin:8px 0 14px;box-shadow:0 4px 0 var(--shade)}
+.card .em svg{width:84px;height:119px;display:block;margin:0 auto}
+.card .rn{font-family:var(--serif);font-size:1.5rem;color:var(--accent);margin:4px 0 0}
+.card .tg{font-size:.84rem;color:var(--sub)}
+.card .ln{margin:10px 0 0;font-size:1rem}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;margin-top:16px;padding-top:14px;border-top:2px dashed var(--line);font-size:.9rem}
+.kv dt{color:var(--sub)}.kv dd{margin:0}
+.banner{background:#F3DFA6;border:2px solid #B8962E;color:#6B5110;border-radius:8px;padding:10px 12px;font-size:.84rem;margin:0 0 14px}
+.note{font-size:.84rem;color:var(--sub);border-top:2px solid var(--line);margin-top:22px;padding-top:12px}
+.grp{font-family:var(--serif);font-size:1.02rem;color:var(--accent);margin:20px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
+.chip{background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:3px 14px;font-size:.92rem}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-size:.92rem;text-decoration:underline;cursor:pointer;padding:10px 0}
+
+/* ---- 進度小動畫：方塊小路，每走一步亮一塊，終點是星球和石像 ---- */
+#scene{position:relative;height:126px;margin:0 2px 8px}
+#scene .blocks{position:absolute;left:0;right:0;bottom:0;display:flex}
+#scene .b{flex:1;height:var(--bh);position:relative;border:1px solid var(--ink);border-left-width:0;background:linear-gradient(#6F9A45 0 30%,#8A5A34 30% 100%)}
+#scene .b:first-child{border-left-width:1px}
+#scene .b::after{content:"";position:absolute;left:0;right:0;top:30%;bottom:0;background:radial-gradient(#6D4426 1px,transparent 1px) 0 0/6px 6px}
+#scene .b.todo{filter:saturate(.3) brightness(1.1)}
+#scene .b.done::before{content:"";position:absolute;left:4px;top:3px;width:6px;height:3px;background:#F2C94C;opacity:.9;z-index:1}
+#scene .b.pop{animation:pop2 .45s steps(3)}
+@keyframes pop2{0%{transform:translateY(0)}40%{transform:translateY(-6px)}100%{transform:translateY(0)}}
+#scene .walker{position:absolute;bottom:var(--bh);width:32px;height:56px;left:0;transition:left .6s steps(8)}
+#scene svg{width:100%;height:100%;shape-rendering:crispEdges;display:block}
+#scene .walker svg{animation:bob .5s steps(1) infinite}
+#scene .walker.idle svg{animation:none}
+@keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+#scene .legA{animation:legA .5s steps(1) infinite}
+#scene .legB{animation:legB .5s steps(1) infinite}
+#scene .walker.idle .legA{animation:none;opacity:1}
+#scene .walker.idle .legB{animation:none;opacity:0}
+@keyframes legA{0%{opacity:1}50%{opacity:0}}
+@keyframes legB{0%{opacity:0}50%{opacity:1}}
+#scene .planet{position:absolute;right:0;bottom:var(--bh);width:56px;height:52px}
+#scene .planet svg{animation:sway 2s steps(2) infinite}
+@keyframes sway{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+#scene .eye{display:none}
+#scene .planet.five .eye{display:block;animation:glow .5s steps(1) infinite}
+@keyframes glow{0%{opacity:1}50%{opacity:.35}}
+#scene .walker.five{animation:jump .6s steps(3) 2}
+@keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-16px)}100%{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){
+  #scene .walker{transition:none}
+  #scene .walker svg,#scene .planet svg,#scene .legA,#scene .legB,#scene .b.pop,#scene .walker.five,#scene .planet.five .eye{animation:none}
+  #scene .legB{opacity:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap"><div id="scene" role="progressbar" aria-label="進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div><div id="app"></div></div>
+<script>
+/* ===== 主辦人設定：只需要改這一區 ===== */
+const CONFIG={
+  title:'見面邀請',
+  confirmed:false,   // ★ 換成真實資料後改 true，頁面上的「預覽版」橫幅就會消失
+  igUser:'imjingnee',         // ★ 你的 IG 帳號（不含 @），填了結果頁才會有「複製並開 IG 私訊」按鈕
+  /* Firebase 網頁設定（公開用途，保護資料靠 Firestore 安全規則）。填了才會出現「直接傳給我」按鈕 */
+  firebase:{apiKey:"AIzaSyDTdfkDYqruftnP8PSI0fZMyevxMuauBuo",authDomain:"realfriendzz.firebaseapp.com",projectId:"realfriendzz",storageBucket:"realfriendzz.firebasestorage.app",messagingSenderId:"891568132632",appId:"1:891568132632:web:caea74823784a38bd0e96d"},
+  intro:'終於要見面啦！先陪我玩個小遊戲嘛，玩完再約時間～',
+  /* ★ 你會在哪些城市、哪些日期。d = 日期（YYYY-MM-DD），to = 結束日（選填），note = 備註（選填，例如：晚上、午餐）
+     下面是範例，請換成你真實的行程 */
+  trips:[
+    {city:'吉隆坡',when:[{d:'2026-12-11',note:'中午'},{d:'2026-12-11',note:'晚上'},{d:'2026-12-12',note:'早上'},{d:'2026-12-25',note:'午、晚'}]},
+    {city:'關丹',when:[{d:'2026-12-17',note:'晚上'},{d:'2026-12-18',note:'晚上'},{d:'2026-12-19',note:'晚上'},{d:'2026-12-20',note:'晚上'},{d:'2026-12-21',note:'早上'}]},
+    {city:'馬六甲',when:[{d:'2026-12-22',note:'早、午、晚'}]},
+    {city:'古來',when:[{d:'2026-12-23',note:'早、午、晚'},{d:'2026-12-24',note:'早、午、晚'}]}
+  ],
+
+  /* ★ 「猜猜我」的答案：answer 是正確選項的順序（從 0 開始），note 是揭曉時多說的一句話（選填） */
+  guess:[
+    {q:'約吃飯的時候，你覺得我比較喜歡？',opts:['安靜好聊天','熱鬧有氣氛','有特色的店','隨便吃就好'],answer:0,note:''},
+    /* answer 可以是一個數字，也可以是一串數字（有多個正確答案） */
+    {q:'你覺得我最近最忙的是什麼？',opts:['生活雜事','工作','創作計畫','學業或研究','創業'],answer:[2,3,4],note:''},
+    {q:'你覺得我心情不好的時候，最常做的是？',opts:['一個人安靜待著','找人聊聊','吃好吃的','睡一覺','做喜歡的事'],answer:0,note:'我還在學習如何求救！希望有一天我心情不好的時候是來找你分享啊我的朋友！'},
+    /* answer:null 代表這題沒有標準答案（每個朋友不同），不計分，只會記錄在回傳訊息裡 */
+    {q:'你覺得你是我的什麼？',opts:['點頭之交（見面會打招呼）','一般朋友（會一起吃飯、聊特定話題）','好朋友（會私下約、知道彼此近況）','摯友（可以不客套，做自己）','知己（很久沒聯絡，見面也像沒分開）'],answer:null,note:'不管你是什麼，當你收到這份邀請卡，就意味著你一定是我生命某個階段很重要的人。'}
+  ]
+};
+
+const REL=['很久沒見的朋友','還沒見過面的朋友','常常見面的朋友','其他'];
+const FORMAT=['一對一見面','小聚（我們幾個朋友一起）','都可以'];
+const FOOD=['葷素都吃','偏素或吃素','有忌口或過敏（請在下方備註）','不吃辣','愛吃辣','愛甜點'];
+const VIBE=['安靜好聊天','熱鬧有氣氛','邊吃邊玩點小遊戲','都可以'];
+const ARR=['先在旁邊觀察一下','主動跟對方聊開','需要對方先開場','看現場氣氛再決定'];
+const TOPIC=['近況與心情','創作與作品','旅行','工作與職涯','社會議題','感情與人生','搞笑廢話','深度話題'];
+const ROLES={};
+(function(){
+var RT={};
+RT.human=[
+"...HHHHHH...",
+"..HHHHHHHH..",
+"..HSSSSSSH..",
+"..SSESSESS..",
+"..SSSSSSSS..",
+"...SSMMSS...",
+"..CCCCCCCC..",
+".CCCCXXCCCC.",
+".SCCCCCCCCS.",
+"..cCCCCCCc..",
+"...PPPPPP...",
+"...PP..PP...",
+"...PP..PP...",
+"..BBB..BBB.."];
+RT.fox=[
+"..oo....oo..",
+"..ooo..ooo..",
+"..oooooooo..",
+"..oKoooKoo..",
+"..oooooooo..",
+"..owwwwwwo..",
+"...owwNwwo..",
+"...oooooo...",
+"..oooooooo..",
+"..oowwwwoo..",
+"..oowwwwoo..",
+"...oo..oo...",
+"...KK..KK...",
+"............"];
+RT.mole=[
+"............",
+"...mmmmmm...",
+"..mmmmmmmm..",
+"..mmEmmEmm..",
+"..mmmmmmmm..",
+"...mmNNmm...",
+"..mmmmmmmm..",
+".mmmmmmmmmm.",
+".mmwwwwwwmm.",
+".yymwwwwmyy.",
+"..mmmmmmmm..",
+"...mm..mm...",
+"...yy..yy...",
+"............"];
+RT.horse=[
+"..hh....hh..",
+"..hhhhhhhh..",
+"..hhhhhhhh..",
+"..hEhhhhEh..",
+"..hhhhhhhh..",
+"...hhhhhh...",
+"...hwwwwh...",
+"...hwNNwh...",
+"..mmhhhhhh..",
+"..mmhhhhhh..",
+"...hhhhhh...",
+"...hhhhhh...",
+"...hh..hh...",
+"...dd..dd..."];
+RT.dog=[
+".dd......dd.",
+".dddddddddd.",
+".ddEddddEdd.",
+".dddddddddd.",
+"..dddNNddd..",
+"...dddddd...",
+"..dddCCddd..",
+"..ddCwwCdd..",
+"..dddCCddd..",
+"..dddddddd..",
+"..dd....dd..",
+"..dd....dd..",
+"..yy....yy..",
+"............"];
+RT.bee=[
+"..a......a..",
+"...a....a...",
+"..wwwwwwww..",
+"...yyyyyy...",
+"..yEyyyyEy..",
+"..yyyyyyyy..",
+"..kkkkkkkk..",
+"..yyyyyyyy..",
+"..kkkkkkkk..",
+"..yyyyyyyy..",
+"...kkkkkk...",
+"....y..y....",
+"....y..y....",
+"............"];
+RT.snake=[
+"............",
+"..gggggg....",
+".gEggggg....",
+"RRgggggg....",
+"..dddgg.....",
+"...gggggggg.",
+"..gggggggggg",
+"..ggd...dddg",
+"..gggggggggg",
+"...dgggggggg",
+"..........gg",
+".....ggggggg",
+"......dddddd",
+"............"];
+RT.rose=[
+"............",
+"...pp.pp....",
+"..rrrrrrrr..",
+"..rKrrrrKr..",
+"..rrrmmrrr..",
+"...rrrrrr...",
+".....ss.....",
+"..l..ss..l..",
+"..ll.ss.ll..",
+".....ss.....",
+".....ss.....",
+"..bbbbbbbb..",
+"..bbbbbbbb..",
+"............"];
+
+var RCR={
+ spikes3:["..K..KK..K..","..KKKKKKKK..","..kkkGGkkk.."],
+ spikes5:["..K.K..K.K..","..KKKKKKKK..","..kkkGGkkk.."],
+ double: ["..KK....KK..","..KKK..KKK..","..KKKGGKKK.."],
+ tall:   [".....KK.....","....KKKK....","..kkkGGkkk.."],
+ arch:   ["...KKKKKK...","..K......K..","..KKKGGKKK.."],
+ band:   ["............","..KKKKKKKK..","..kkkGGkkk.."]
+};
+var RCN={spikes3:'三尖冠',spikes5:'五尖冠',double:'雙峰冠',tall:'高冠',arch:'拱冠',band:'圓環冠'};
+var RCC={ /* 皇冠顏色：[主色, 暗色, 寶石, 名稱] */
+ gold:['#F2C94C','#C9A227','#C9503A','金色'],leaf:['#7FB069','#4D7A3A','#F2C94C','葉綠'],pink:['#F4A6B8','#D4788F','#FFF0C0','粉紅'],
+ flame:['#F28C28','#C25E10','#F2E44C','火焰橘'],blue:['#6FA8DC','#3F6EA0','#C9503A','羅盤藍'],silver:['#D5DADD','#9AA3A8','#6FA8DC','銀色'],
+ wine:['#4F8A5A','#2F5A38','#F2C94C','酒綠'],sky:['#8EC9E8','#5A9AC0','#FFF','天藍'],emer:['#2FA66B','#1B6B44','#F2C94C','翠綠'],
+ red:['#B8403A','#7E2420','#F2C94C','絲絨紅'],grey:['#A8A8A0','#7A7A72','#F2C94C','灰'],bronze:['#B87B3A','#7E5020','#F2C94C','青銅'],
+ violet:['#8A63C8','#5B3F8F','#F2C94C','紫'],yellow:['#F2D84C','#B89A1A','#3A2A1A','黃'],brown:['#8A5A34','#5E3A1E','#F2C94C','銅褐'],
+ rust:['#C26A3A','#8A4020','#F2C94C','鏽紅'],white:['#F4F1E8','#BFB9A6','#C9503A','白'],sand:['#D9B878','#A98A4A','#C9503A','沙色'],
+ crystal:['#9EE6E6','#5FB8B8','#fff','水晶青'],blackgold:['#4A4A52','#26262C','#F2C94C','黑金'],teal:['#3FA6A0','#217570','#F2C94C','湖水綠'],navy:['#3B4A6B','#232D45','#F2C94C','海軍藍']
+};
+
+function rApply(rows,a){
+  var r=rows.slice();
+  function set(i,s){r[i]=s}
+  if(a==='scarf'){set(6,"..XXXXXXXX..");}
+  if(a==='lamp'){set(7,".CCCCXXCCCCY");set(8,".SCCCCCCCCLL");}
+  if(a==='glassbook'){set(3,"..SGEGGEGS..");set(8,".OOCCCCCCCS.");set(9,"..OOCCCCCc..");}
+  if(a==='ruffbeard'){set(4,"..SDDDDDDS..");set(5,"...DDDDDD...");set(6,"..WWWWWWWW..");}
+  if(a==='ruff'){set(6,"..WWWWWWWW..");}
+  if(a==='bottle'){set(7,".CCCCXXCCCCo");set(8,".SCCCCCCCCoo");set(4,"..SSSSSSSS..");}
+  if(a==='tie'){set(7,".CCCCCXCCCC.");}
+  if(a==='goggles'){set(2,"..HGGGGGGH..");}
+  if(a==='beard'){set(4,"..SDDDDDDS..");set(5,"...DDDDDD...");set(6,"..CDDDDDDC..");}
+  if(a==='mustache'){set(4,"..SSDDDDSS..");}
+  if(a==='longhair'){for(var i=2;i<=9;i++){var s=r[i].split('');if(s[1]==='.')s[1]='H';if(s[10]==='.')s[10]='H';r[i]=s.join('')}}
+  if(a==='staff'){for(var j=2;j<=13;j++){var t=r[j].split('');if(t[11]==='.')t[11]='T';r[j]=t.join('')}}
+  if(a==='crystal'){set(7,".CCCCXXCCCCq");set(8,".SCCCCCCCCqq");}
+  if(a==='hood'){set(0,"..HHHHHHHH..");set(1,".HHHHHHHHHH.");}
+  if(a==='veil'){set(4,"..SVVVVVVS..");set(5,"...VVVVVV...");}
+  return r;
+}
+
+var CH=[
+ {b:'小王子',n:'小王子',k:'human',p:{H:'#E8C24A',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#4F8A8B',c:'#3C6A6B',X:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'},a:'scarf',c:['spikes3','gold']},
+ {b:'小王子',n:'狐狸',k:'fox',p:{o:'#D9822B',w:'#F6E7C8',K:'#3A2A1A',N:'#3A2A1A'},c:['spikes5','leaf']},
+ {b:'小王子',n:'玫瑰',k:'rose',p:{p:'#F4A6B8',r:'#C9503A',K:'#3A2A1A',m:'#7A2020',s:'#4D7A3A',l:'#7FB069',b:'#8A5A34'},c:['double','pink']},
+ {b:'小王子',n:'點燈人',k:'human',p:{H:'#4A3320',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#3B4A6B',c:'#2A3550',X:'#3B4A6B',P:'#2A3550',B:'#3A2A1A',L:'#7A6A50',Y:'#F2C94C'},a:'lamp',c:['spikes3','flame']},
+ {b:'小王子',n:'地理學家',k:'human',p:{H:'#C9C9C9',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#5B7F5A',c:'#456345',X:'#5B7F5A',P:'#3B4A3A',B:'#3A2A1A',G:'#3A2A1A',D:'#C9C9C9',O:'#8A5A34'},a:'glassbook',c:['tall','blue']},
+ {b:'小王子',n:'國王',k:'human',p:{H:'#D8D8D8',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#8A3F7A',c:'#5E2A54',X:'#F4F1E8',W:'#F4F1E8',P:'#5E2A54',B:'#3A2A1A',D:'#D8D8D8'},a:'ruffbeard',c:['tall','gold']},
+ {b:'小王子',n:'愛慕虛榮的人',k:'human',p:{H:'#3A2A1A',S:'#F0C9A0',E:'#3A2A1A',M:'#C9503A',C:'#D95F8A',c:'#A8446A',X:'#F2C94C',P:'#3A2A1A',B:'#3A2A1A'},a:'plain',c:['arch','pink']},
+ {b:'小王子',n:'酒鬼',k:'human',p:{H:'#7A4A2A',S:'#E8A58A',E:'#3A2A1A',M:'#8A3A30',C:'#7A6A58',c:'#5A4C3E',X:'#7A6A58',P:'#4A4036',B:'#2A2018',o:'#4D8A55'},a:'bottle',c:['band','wine']},
+ {b:'小王子',n:'商人',k:'human',p:{H:'#5A4A3A',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#4A4A52',c:'#2E2E34',X:'#C9503A',P:'#2E2E34',B:'#1A1A1E'},a:'tie',c:['band','gold']},
+ {b:'小王子',n:'飛行員',k:'human',p:{H:'#8A5A34',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#8A6A44',c:'#6A4E30',X:'#E8E0C8',P:'#6A5A44',B:'#2A2018',G:'#8EC9E8'},a:'goggles',c:['double','sky']},
+ {b:'小王子',n:'蛇',k:'snake',p:{g:'#E8B84A',d:'#B88A20',E:'#3A2A1A',R:'#C9503A'},c:['spikes5','emer']},
+
+ {b:'國王12月',n:'小國王十二月',k:'human',p:{H:'#C9C9C9',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#B8403A',c:'#7E2420',X:'#F4F1E8',W:'#F4F1E8',P:'#7E2420',B:'#3A2A1A'},a:'ruff',c:['tall','red']},
+ {b:'國王12月',n:'上班的人',k:'human',p:{H:'#5A4030',S:'#F0C9A0',E:'#3A2A1A',M:'#9A5A4A',C:'#6A7A8A',c:'#4A5866',X:'#C9503A',P:'#3A4250',B:'#2A2A2E'},a:'tie',c:['band','grey']},
+
+ {b:'神奇的收費亭',n:'米羅',k:'human',p:{H:'#6A4A2A',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#D9822B',c:'#A8601A',X:'#F4F1E8',P:'#3B4A6B',B:'#3A2A1A'},a:'plain',c:['spikes3','red']},
+ {b:'神奇的收費亭',n:'嘀嗒',k:'dog',p:{d:'#B87B3A',E:'#3A2A1A',N:'#3A2A1A',C:'#F2C94C',w:'#F4F1E8',y:'#6A4A2A'},c:['double','bronze']},
+ {b:'神奇的收費亭',n:'假仙',k:'bee',p:{a:'#3A2A1A',w:'#CDE8D0',y:'#6FA06A',E:'#3A2A1A',k:'#3A5A3A'},c:['tall','violet']},
+ {b:'神奇的收費亭',n:'阿札茲國王',k:'human',p:{H:'#E8E8E8',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#2F6AA0',c:'#1F4A78',X:'#F2C94C',P:'#1F4A78',B:'#3A2A1A',D:'#E8E8E8'},a:'beard',c:['arch','blue']},
+ {b:'神奇的收費亭',n:'數學魔術師',k:'human',p:{H:'#C9C9C9',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#7A4FB0',c:'#5B3F8F',X:'#F2C94C',P:'#5B3F8F',B:'#3A2A1A',D:'#E8E8E8'},a:'mustache',c:['tall','violet']},
+ {b:'神奇的收費亭',n:'拼字蜂',k:'bee',p:{a:'#3A2A1A',w:'#E8F1F5',y:'#F2D84C',E:'#3A2A1A',k:'#3A2A1A'},c:['spikes5','yellow']},
+ {b:'神奇的收費亭',n:'韻公主',k:'human',p:{H:'#C9503A',S:'#F0C9A0',E:'#3A2A1A',M:'#C9503A',C:'#F4A6B8',c:'#D4788F',X:'#F4F1E8',P:'#D4788F',B:'#8A5A34'},a:'longhair',c:['double','pink']},
+ {b:'神奇的收費亭',n:'理公主',k:'human',p:{H:'#3A2A1A',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#8EC9E8',c:'#5A9AC0',X:'#F4F1E8',P:'#5A9AC0',B:'#8A5A34'},a:'longhair',c:['arch','silver']},
+
+ {b:'男孩、鼴鼠、狐狸與馬',n:'男孩',k:'human',p:{H:'#D9B060',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#A8896A',c:'#7E6446',X:'#C9503A',P:'#6A5A44',B:'#3A2A1A'},a:'scarf',c:['spikes3','silver']},
+ {b:'男孩、鼴鼠、狐狸與馬',n:'鼴鼠',k:'mole',p:{m:'#6A5A4A',E:'#1A1A1A',N:'#E8A0A0',w:'#C9B8A0',y:'#E8D8B8'},c:['band','brown']},
+ {b:'男孩、鼴鼠、狐狸與馬',n:'狐狸（受過傷的）',k:'fox',p:{o:'#B8602A',w:'#E8D8C0',K:'#3A2A1A',N:'#3A2A1A'},c:['spikes3','rust']},
+ {b:'男孩、鼴鼠、狐狸與馬',n:'馬',k:'horse',p:{h:'#F4F1E8',m:'#C9B890',E:'#3A2A1A',w:'#E8D8C8',N:'#B89A8A',d:'#6A5A4A'},c:['arch','white']},
+
+ {b:'牧羊少年奇幻之旅',n:'聖地牙哥',k:'human',p:{H:'#4A3320',S:'#E8B890',E:'#3A2A1A',M:'#9A5A4A',C:'#C9A070',c:'#A88050',X:'#8A5A34',P:'#7A5A3A',B:'#3A2A1A',T:'#8A5A34'},a:'staff',c:['spikes5','sand']},
+ {b:'牧羊少年奇幻之旅',n:'撒冷王',k:'human',p:{H:'#F0F0F0',S:'#E8C8A0',E:'#3A2A1A',M:'#9A5A4A',C:'#F2D060',c:'#C9A227',X:'#C9503A',P:'#8A6A30',B:'#3A2A1A',D:'#F0F0F0'},a:'beard',c:['tall','white']},
+ {b:'牧羊少年奇幻之旅',n:'水晶商人',k:'human',p:{H:'#5A4A3A',S:'#E8B890',E:'#3A2A1A',M:'#9A5A4A',C:'#7A9AB0',c:'#5A7A90',X:'#F4F1E8',P:'#5A6A7A',B:'#3A2A1A',q:'#9EE6E6'},a:'crystal',c:['double','crystal']},
+ {b:'牧羊少年奇幻之旅',n:'煉金術士',k:'human',p:{H:'#2A2A30',S:'#E8B890',E:'#3A2A1A',M:'#9A5A4A',C:'#2A2A30',c:'#16161A',X:'#F2C94C',P:'#16161A',B:'#16161A'},a:'hood',c:['spikes5','blackgold']},
+ {b:'牧羊少年奇幻之旅',n:'法蒂瑪',k:'human',p:{H:'#2A1A12',S:'#E8B890',E:'#3A2A1A',M:'#9A5A4A',C:'#3FA6A0',c:'#217570',X:'#F2C94C',P:'#217570',B:'#6A4A2A',V:'#E8F1F5'},a:'veil',c:['arch','teal']},
+ {b:'牧羊少年奇幻之旅',n:'英國人',k:'human',p:{H:'#C9A878',S:'#F0C9A0',E:'#3A2A1A',M:'#B3685A',C:'#7A6A5A',c:'#5A4C3E',X:'#3B4A6B',P:'#4A4A52',B:'#3A2A1A',G:'#3A2A1A',O:'#8A5A34'},a:'glassbook',c:['band','navy']}
+];
+
+
+var META={"prince": {"n": "小王子", "tag": "好奇型", "line": "我會一直問問題，想知道你從哪裡來、做過什麼。"}, "fox": {"n": "狐狸", "tag": "慢熟型", "line": "給我一點時間，熟了之後我會是最有話聊的那個。"}, "rose": {"n": "玫瑰", "tag": "氣氛型", "line": "場子越熱鬧我越自在，也很願意把自己的故事拿出來分享。"}, "lamp": {"n": "點燈人", "tag": "照顧型", "line": "我會留意誰還沒夾到菜，誰還插不上話。"}, "geo": {"n": "地理學家", "tag": "話題型", "line": "我想聽你走過的地方和做過的事，聊得越深我越開心。"}, "king": {"n": "國王", "tag": "等開場型", "line": "請你先跟我打個招呼，我會很認真地回應，其實很好相處。"}, "vain": {"n": "愛慕虛榮的人", "tag": "捧場型", "line": "我超愛熱鬧，你一鼓掌我就更有精神！"}, "drunk": {"n": "酒鬼", "tag": "搞笑型", "line": "我負責講廢話，讓大家都笑出來，不用想太多。"}, "biz": {"n": "商人", "tag": "務實型", "line": "我想認真聊聊工作和未來，也很會算大家怎麼分帳。"}, "pilot": {"n": "飛行員", "tag": "旅人型", "line": "我想聽你去過的地方，也會跟你分享我迷路的故事。"}, "snake": {"n": "蛇", "tag": "神祕型", "line": "我話不多，但一開口就會聊得很深。"}};
+function mk(c){var base=RT[c.k];if(c.a)base=rApply(base,c.a);var cr=RCR[c.c[0]],cc=RCC[c.c[1]],o='';
+function put(x,y,f){o+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+f+'"/>'}
+for(var y=0;y<cr.length;y++)for(var x=0;x<12;x++){var ch=cr[y][x];if(ch==='K')put(x,y,cc[0]);else if(ch==='k')put(x,y,cc[1]);else if(ch==='G')put(x,y,cc[2])}
+for(var y2=0;y2<base.length;y2++)for(var x2=0;x2<12;x2++){var h=base[y2][x2];if(h==='.')continue;var f=c.p[h];if(f)put(x2,y2+cr.length,f)}
+return '<svg viewBox="0 0 12 '+(cr.length+base.length)+'" shape-rendering="crispEdges" aria-hidden="true">'+o+'</svg>'}
+CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k in META)if(META[k].n===c.n){ROLES[k]={n:c.n,tag:META[k].tag,line:META[k].line,svg:mk(c),crown:RCC[c.c[1]][3]+RCN[c.c[0]]}}});
+})();
+
+/* ===== 狀態 ===== */
+const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
+const CARD_N=7;
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+let A=fresh(),step=0;
+
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD=['日','一','二','三','四','五','六'];
+function fmtDay(ds){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');if(!m)return String(ds||'');
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  return `${+m[2]}/${+m[3]}（${WD[d.getDay()]}）`;
+}
+function fmtWhen(w){
+  let t=fmtDay(w.d);
+  if(w.to&&w.to!==w.d)t+=`–${fmtDay(w.to)}`;
+  if(w.note)t+=` ${w.note}`;
+  return t;
+}
+const scored=()=>CONFIG.guess.filter(g=>g.answer!=null).length;
+const isRight=(g,v)=>Array.isArray(g.answer)?g.answer.includes(v):v===g.answer;
+const ansText=g=>(Array.isArray(g.answer)?g.answer:[g.answer]).map(k=>g.opts[k]).join('、');
+const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.guess[i],v)).length;
+const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
+const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
+const isOther=()=>A.city===CONFIG.trips.length;
+function dateLabels(){
+  const out=[],byCity={},extra=[];
+  A.dates.forEach(k=>{
+    if(k==='none'){extra.push('這些時間都不行，我再告訴你');return}
+    const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;
+    const ci=+m[1],t=CONFIG.trips[ci];if(!t)return;const w=t.when[+m[2]];if(!w)return;
+    (byCity[ci]=byCity[ci]||[]).push([+m[2],fmtWhen(w)]);
+  });
+  CONFIG.trips.forEach((t,ci)=>{if(byCity[ci])out.push(`${t.city} ${byCity[ci].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('、')}`)});
+  return out.concat(extra);
+}
+
+function role(){
+  const s={};Object.keys(ROLES).forEach(k=>s[k]=0);
+  const add=(k,n)=>{s[k]+=n};
+  if(A.arrive===0){add('fox',2);add('geo',1);add('snake',1)}
+  if(A.arrive===1){add('prince',1);add('rose',1);add('vain',1);add('pilot',1)}
+  if(A.arrive===2){add('fox',1);add('king',2)}
+  if(A.arrive===3){add('lamp',2);add('pilot',1)}
+  if(A.vibe===0){add('fox',1);add('geo',1);add('snake',1)}
+  if(A.vibe===1){add('rose',2);add('vain',1)}
+  if(A.vibe===2){add('prince',1);add('drunk',1)}
+  if(A.vibe===3){add('lamp',1);add('pilot',1)}
+  A.topic.forEach(i=>{
+    if(i===0)add('lamp',1);
+    if(i===1){add('pilot',1);add('prince',1)}
+    if(i===2)add('pilot',2);
+    if(i===3)add('biz',2);
+    if(i===4){add('geo',1);add('king',1)}
+    if(i===5){add('snake',1);add('rose',1)}
+    if(i===6){add('drunk',2);add('rose',1)}
+    if(i===7){add('geo',1);add('snake',1)}
+  });
+  const order=['fox','prince','rose','lamp','geo','pilot','king','snake','vain','drunk','biz'];
+  let best=order[0];order.forEach(k=>{if(s[k]>s[best])best=k});
+  return ROLES[best];
+}
+function msg(){
+  const r=role();
+  const pick=(arr,idx)=>idx.map(i=>arr[i]).join('、');
+  return [
+    `【${CONFIG.title}】`,
+    `我是：${A.name.trim()||'（沒留暱稱）'}（${A.rel===REL.length-1&&A.relOther.trim()?`其他：${A.relOther.trim()}`:REL[A.rel]}）`,
+    `我在：${cityName()}`,
+    `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
+    `見面方式：${FORMAT[A.format]}`,
+    `飲食：${A.food.length?pick(FOOD,A.food):'沒有特別'}${A.foodNote.trim()?`（備註：${A.foodNote.trim()}）`:''}`,
+    `喜歡的氣氛：${VIBE[A.vibe]}`,
+    `想聊：${A.topic.length?pick(TOPIC,A.topic):'都可以'}`,
+    `見面時的我：${ARR[A.arrive]}`,
+    `我的赴約角色：${r.n}`,
+    `猜猜我：猜中 ${hits()} / ${scored()}`,
+    openAns()?`你覺得你是我的：${openAns()}`:null
+  ].filter(Boolean).join('\n');
+}
+
+/* ===== 畫面 ===== */
+function opts(list,sel,act,extra=''){
+  return `<div class="stack">${list.map((t,i)=>`<button type="button" class="opt ${(Array.isArray(sel)?sel.includes(i):sel===i)?'on':''}" data-a="${act}" data-v="${i}" ${extra}>${esc(t)}</button>`).join('')}</div>`;
+}
+function canNext(id){
+  if(id==='who')return A.name.trim().length>0&&A.rel>=0;
+  if(id==='city')return A.city>=0;
+  if(id==='dates')return A.dates.length>0;
+  if(id==='format')return A.format>=0;
+  if(id==='vibe')return A.vibe>=0;
+  if(id==='arrive')return A.arrive>=0;
+  if(id.startsWith('g'))return A.g[+id[1]]>=0;
+  return true;
+}
+const banner=()=>CONFIG.confirmed?'':'<div class="banner">預覽版：行程與「猜猜我」的答案目前是範例，主辦人確認後才會正式發出。</div>';
+function dateBtn(k,text){
+  return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}">${esc(text)}</button>`;
+}
+function view(id){
+  if(id==='intro')return `
+    ${banner()}
+    <h1>我們來見面吧！</h1>
+    <p>${esc(CONFIG.intro)}</p>
+    <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
+    <button class="btn" data-a="next">開始</button>`;
+  if(id==='who')return `
+    <h2>嗨嗨請問尼是誰～～</h2>
+    <label class="f" for="nm">我通常叫你什麼？</label>
+    <input id="nm" type="text" maxlength="12" placeholder="暱稱就好（必填）" value="${esc(A.name)}" data-i="name">
+    <label class="f">你覺得我們的關係是？</label>
+    ${opts(REL,A.rel,'rel')}
+    ${A.rel===REL.length-1?`<label class="f" for="ro">那你是我的…？（選填）</label><input id="ro" type="text" maxlength="20" placeholder="你來說" value="${esc(A.relOther)}" data-i="relOther">`:''}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id[0]==='g'){
+    const i=+id[1],g=CONFIG.guess[i],done=A.g[i]>=0,open=g.answer==null,ok=!open&&isRight(g,A.g[i]);
+    const list=`<div class="stack">${g.opts.map((t,k)=>{
+      let c='';if(done){if(open){if(k===A.g[i])c='on'}else if(isRight(g,k))c='right';else if(k===A.g[i])c='wrong'}
+      return `<button type="button" class="opt ${c}" data-a="guess" data-v="${k}" ${done?'disabled':''}>${esc(t)}</button>`}).join('')}</div>`;
+    return `
+    ${banner()}
+    <p class="small">慢慢來比較快</p>
+    <h2>${esc(g.q)}</h2>${list}
+    ${done?`<div class="reveal">${open?`<b class="ok">謝謝你告訴我，</b>${esc(g.note)}`:ok?'<b class="ok">天啊你也太了解我了吧！</b>':`<b class="no">啊啊啊沒事！</b>其實是「${esc(ansText(g))}」。`}${g.note&&!open?`<br>${esc(g.note)}`:''}</div>
+    <button class="btn" data-a="next">${i<CONFIG.guess.length-1?'LET\'S GO':'快來拿邀請卡！'}</button>`:''}`;
+  }
+  if(id==='city')return `<p class="small">見面卡 1 / ${CARD_N}</p><h2>你想要在哪個城市見到我？</h2>
+    ${opts(CONFIG.trips.map(t=>t.city).concat(['其他城市']),A.city,'city')}
+    ${isOther()?`<label class="f" for="co">你在哪裡？（選填）</label><input id="co" type="text" maxlength="20" placeholder="例如：新加坡" value="${esc(A.cityOther)}" data-i="cityOther">
+    <p class="small">我暫時沒排到那邊，下一步你可以看看其他城市的時間，或告訴我你什麼時候方便。</p>`:''}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='dates'){
+    const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
+    const showAll=A.showAll||home<0;
+    let html=`${banner()}<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
+    CONFIG.trips.forEach((t,ci)=>{
+      if(!(showAll||ci===home))return;
+      html+=`<div class="grp">${esc(t.city)}</div><div class="stack">${t.when.map((w,wi)=>dateBtn(`c${ci}d${wi}`,fmtWhen(w))).join('')}</div>`;
+    });
+    if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他時間</button>`;
+    html+=`<div class="grp">其他</div><div class="stack">${dateBtn('none','這些時間都不行，我再告訴你')}</div>
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+    return html;
+  }
+  if(id==='format')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='food')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
+    <label class="f" for="fn">忌口或過敏備註（選填）</label>
+    <input id="fn" type="text" maxlength="40" placeholder="例如：不吃牛、花生過敏" value="${esc(A.foodNote)}" data-i="foodNote">
+    <button class="btn" data-a="next">下一步</button>`;
+  if(id==='vibe')return `<p class="small">見面卡 5 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='arrive')return `<p class="small">見面卡 6 / ${CARD_N}</p><h2>久違見面，或第一次見面，你通常會？</h2>${opts(ARR,A.arrive,'arrive')}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='topic')return `<p class="small">見面卡 7 / ${CARD_N}</p><h2>你最想聊什麼？</h2><p class="sub">最多選 3 個，也可以略過。</p>${opts(TOPIC,A.topic,'topic')}
+    <button class="btn" data-a="next">看我的見面卡</button>`;
+  if(id==='result'){
+    const r=role(),m=msg();
+    const line=`https://line.me/R/msg/text/?${encodeURIComponent(m)}`;
+    return `
+    <h2>你的見面卡</h2>
+    <div class="card">
+      <div class="em">${r.svg}</div>
+      <p class="small">你是我的故事裡的…</p><div class="rn">${esc(A.name.trim()||'未留暱稱')}　${r.n}</div>
+      <div class="tg">${r.crown}・${r.tag}赴約者</div>
+      <p class="ln">${esc(r.line)}</p>
+      <dl class="kv">
+        <dt>城市</dt><dd>${esc(cityName())}</dd>
+        <dt>時間</dt><dd>${esc(dateLabels().join('；'))}</dd>
+        <dt>方式</dt><dd>${esc(FORMAT[A.format])}</dd>
+        <dt>氣氛</dt><dd>${esc(VIBE[A.vibe])}</dd>
+        <dt>想聊</dt><dd>${A.topic.length?esc(A.topic.map(i=>TOPIC[i]).join('、')):'都可以'}</dd>
+        <dt>猜猜我</dt><dd>猜中 ${hits()} / ${scored()}</dd>
+      </dl>
+    </div>
+    <p class="small">小王子角色只是好玩的分類，不是正式測驗。</p>
+    <h2 style="margin-top:22px">把見面卡傳給我</h2>
+    <textarea id="out" rows="11" readonly>${esc(m)}</textarea>
+    ${CONFIG.firebase?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
+    <div class="btnrow">
+      ${CONFIG.igUser?`<a class="btn" data-a="igcopy" href="https://ig.me/m/${encodeURIComponent(CONFIG.igUser)}" target="_blank" rel="noopener">複製並開 IG 私訊</a>`:''}
+      <a class="btn ${CONFIG.igUser?'ghost':''}" href="${line}" target="_blank" rel="noopener">用 LINE 傳</a>
+      <button type="button" class="btn ghost" data-a="copy">複製訊息</button>
+      <button type="button" class="btn ghost" data-a="share">分享…</button>
+    </div>
+    ${A.hint?`<p class="small" role="status">${esc(A.hint)}</p>`:''}
+    <p class="note">IG 沒辦法自動帶入文字，所以流程是：${CONFIG.igUser?'按「複製並開 IG 私訊」，到聊天室貼上送出。':'按「複製訊息」，再貼到我們的 IG 聊天室。'}按下任何傳送按鈕之前，這張卡不會離開你的手機。</p>
+    <button class="btn ghost" data-a="again">重新填一次</button>`;
+  }
+  return '';
+}
+
+/* ===== 進度小動畫（原創像素圖，不使用任何現成遊戲的素材） ===== */
+function pxRect(x,y,w,h,f,cls){return '<rect'+(cls?' class="'+cls+'"':'')+' x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"/>'}
+function pxSprite(rows,pal,ox,oy){let o='';for(let y=0;y<rows.length;y++)for(let x=0;x<rows[y].length;x++){const c=rows[y][x];if(c==='.'||!pal[c])continue;o+=pxRect(x+(ox||0),y+(oy||0),1,1,pal[c])}return o}
+function walkerSvg(){
+  const P={Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'};
+  const body=["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."];
+  const legs=["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
+  const A=["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
+  const B=A.map(r=>r.split('').reverse().join(''));
+  return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
+}
+function planetSvg(){
+  const cx=13.5,cy=5.5,rx=13.6,ry=5.8,oy=14;
+  const inE=(x,y,ex,ey,ax,ay)=>{const dx=(x-ex)/ax,dy=(y-ey)/ay;return dx*dx+dy*dy<=1};
+  let o='';
+  for(let y=0;y<12;y++)for(let x=0;x<28;x++){
+    const u=(x-cx)/rx,v=(y-cy)/ry,d=Math.sqrt(u*u+v*v);if(d>1)continue;
+    let c='#5A8FB0';
+    if(u*0.8+v<-0.55)c='#7AB0CF';else if(u*0.5+v>0.45)c='#46758F';
+    if(inE(x,y,7,4,3.2,1.5)||inE(x,y,19,7,3.6,1.7)||inE(x,y,12,8,2.2,1.1)||inE(x,y,23,3,2,1))c=v>0.4?'#5F8F4C':'#7FB069';
+    if((x>=14&&x<=16&&y===2)||(x>=4&&x<=5&&y===7))c='#E8F1F5';
+    if(d>0.88)c='#2F5A73';
+    o+=pxRect(x,y+oy,1,1,c);
+  }
+  o+=pxRect(0,6,1,1,'#F2C94C')+pxRect(27,10,1,1,'#F2C94C');
+  const M={G:'#A8A8A0',g:'#9A9A92',d:'#7A7A72',D:'#3A3A34',M:'#5A5A54'};
+  const moai=["..gGGGGGGg..","..GGGGGGgd..","..GGGGGGgd..","..GDDGGDDgd.","..GDDGGDDgd.","..GGGGGGggd.","..GGGddGgd..","..GGGddGgd..","..GGGddGgd..","..GGGGGGgd..","..GGMMMMgd..","..GGGGGGgd..","...GGGGgd...","..GGGGGGGgd.","..GGGGGGGgd.","..GGGGGGGgd."];
+  o+=pxSprite(moai,M,8,0)+pxRect(11,3,2,2,'#FFE27A','eye')+pxRect(15,3,2,2,'#FFE27A','eye')+pxRect(11,3,1,1,'#fff','eye')+pxRect(15,3,1,1,'#fff','eye');
+  return '<svg viewBox="0 0 28 26">'+o+'</svg>';
+}
+let sceneReady=false,scenePrev=0,sceneTimer=0;
+function initScene(){
+  const el=document.getElementById('scene');if(!el)return;
+  const B=STEPS.length-1;
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
+  sceneReady=true;
+  window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
+}
+function updateScene(silent){
+  if(!sceneReady)return;
+  const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
+  const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
+  for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
+  w.style.left=((tw-92)*Math.min(step,B)/B)+'px';
+  w.classList.remove('idle','five');pl.classList.remove('five');
+  clearTimeout(sceneTimer);
+  sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
+  el.setAttribute('aria-valuenow',String(Math.round(step/B*100)));
+  scenePrev=step;
+}
+function render(keepScroll){
+  const y=window.scrollY,id=STEPS[step];
+  const pct=Math.round(step/(STEPS.length-1)*100);
+  const top=step>0?`<div class="top"><button type="button" class="back" data-a="prev" aria-label="上一步">← 上一步</button></div>`:'';
+  document.getElementById('app').innerHTML=top+view(id);
+  updateScene();
+  window.scrollTo(0,keepScroll?y:0);
+}
+function toggle(arr,v,max){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else if(!max||arr.length<max)arr.push(v)}
+
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]');if(!b||b.disabled)return;
+  const a=b.dataset.a,v=+b.dataset.v;
+  switch(a){
+    case 'next':if(canNext(STEPS[step])){step=Math.min(STEPS.length-1,step+1);A.hint='';render(false)}break;
+    case 'prev':step=Math.max(0,step-1);render(false);break;
+    case 'rel':A.rel=v;render(true);break;
+    case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
+    case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false}render(true);break;
+    case 'showall':A.showAll=true;render(true);break;
+    case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
+    case 'format':A.format=v;render(true);break;
+    case 'food':toggle(A.food,v,0);render(true);break;
+    case 'vibe':A.vibe=v;render(true);break;
+    case 'arrive':A.arrive=v;render(true);break;
+    case 'topic':toggle(A.topic,v,3);render(true);break;
+    case 'igcopy':{try{navigator.clipboard.writeText(msg())}catch(_){}break}
+    case 'again':A=fresh();step=0;render(false);break;
+    case 'copy':{
+      let ok=false;
+      try{await navigator.clipboard.writeText(msg());ok=true}catch(_){}
+      if(!ok){try{const t=document.getElementById('out');t.select();t.setSelectionRange(0,99999);ok=document.execCommand('copy')}catch(_){}}
+      A.hint=ok?'已複製，貼到 IG 或任何聊天室傳給我就可以了。':'沒辦法自動複製，請長按上方文字框，選「全選」再複製。';
+      render(true);break}
+    case 'fbsend':{
+      if(A.sending||A.sent)break;
+      A.sending=true;A.hint='';render(true);
+      try{
+        const V='13.4.0',B='https://www.gstatic.com/firebasejs/'+V+'/';
+        const [{initializeApp},{getAuth,signInAnonymously},{getFirestore,collection,addDoc,serverTimestamp}]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
+        const app=initializeApp(CONFIG.firebase);
+        await signInAnonymously(getAuth(app));
+        const r=role();
+        await addDoc(collection(getFirestore(app),'invites'),{
+          createdAt:serverTimestamp(),
+          name:A.name.trim(),
+          relation:A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel],
+          city:cityName(),
+          dates:dateLabels(),
+          format:FORMAT[A.format],
+          role:r.n,
+          guessHits:hits(),
+          guessTotal:scored(),
+          message:msg()
+        });
+        A.sent=true;
+      }catch(err){
+        console.error(err);
+        A.hint='直接傳送失敗了，請改用下面的 IG／LINE／複製。';
+      }
+      A.sending=false;render(true);break}
+    case 'share':{
+      let done=false;
+      try{if(navigator.share){await navigator.share({text:msg()});done=true;A.hint=''}}catch(err){if(err&&err.name==='AbortError')done=true}
+      if(!done)A.hint='這個瀏覽器開不了分享選單，請用「複製訊息」或「用 LINE 傳」。';
+      render(true);break}
+  }
+});
+document.addEventListener('input',e=>{
+  const k=e.target.dataset&&e.target.dataset.i;
+  if(k){A[k]=e.target.value;if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
+});
+initScene();
+render(false);
+</script>
+</body>
+</html>
