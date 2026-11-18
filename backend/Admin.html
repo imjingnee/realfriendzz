@@ -141,7 +141,7 @@ function openBook(id,pre){
   <label>日期</label><input type="date" id="bd" value="${esc(d)}">
   <div class="row"><div><label>開始</label><input type="time" id="bs" value="${esc(s0)}"></div><div><label>結束</label><input type="time" id="be" value="${esc(e0)}"></div></div>
   <label>地點／城市</label><input id="bc" value="${esc(city)}">
-  ${r.email?`<label><input type="checkbox" id="bm" checked> 同時寄確認信給 ${esc(r.email)}</label>
+  ${r.email?`<label><input type="checkbox" id="bm" checked> 同時寄確認信給 ${esc(r.email)}（信裡會附「加入 Google 行事曆」按鈕）</label>
   <label>信件主旨</label><input id="bsub" value="我們確定見面囉！">
   <label>信件內容</label><textarea id="bbody" rows="7"></textarea>`:
   `<p class="small">他沒留 Email。確認後下面會給你一段文字，可以複製後用 IG 傳給他。</p>`}

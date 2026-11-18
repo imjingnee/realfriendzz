@@ -195,10 +195,41 @@ function confirmBooking(key, id, o) {
   f.s.getRange(f.no, COL['狀態'] + 1, 1, 5).setValues([['已確認', o.date, o.start + '–' + o.end, ev.getId(), safe_(o.city, 40)]]);
   let mailed = false;
   if (o.sendMail && r.email) {
-    MailApp.sendEmail({ to: r.email, subject: safe_(o.subject, 100) || '我們確定見面囉！', body: String(o.body || '').slice(0, 3000) });
+    sendConfirm_(r, o, start, end, ev.getId());
     mailed = true;
   }
   return { ok: true, mailed: mailed, rows: allRows_() };
+}
+
+/* ---------- 確認信：附「加入 Google 日曆」按鈕與 .ics 附件 ---------- */
+function utc_(d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+function htmlEsc_(t) { return String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function icsEsc_(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1'); }
+function gcalUrl_(title, start, end, place, detail) {
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) +
+    '&dates=' + utc_(start) + '/' + utc_(end) + '&location=' + encodeURIComponent(place || '') +
+    '&details=' + encodeURIComponent(detail || '');
+}
+function icsBlob_(uid, title, start, end, place, detail) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//meeting-invite//ZH', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', 'UID:' + uid + '@meeting-invite', 'DTSTAMP:' + utc_(new Date()), 'DTSTART:' + utc_(start), 'DTEND:' + utc_(end),
+    'SUMMARY:' + icsEsc_(title), 'LOCATION:' + icsEsc_(place), 'DESCRIPTION:' + icsEsc_(detail), 'END:VEVENT', 'END:VCALENDAR'];
+  return Utilities.newBlob(lines.join('\r\n'), 'text/calendar', 'meeting.ics');
+}
+function sendConfirm_(r, o, start, end, uid) {
+  const title = '我們見面！';
+  const place = safe_(o.city, 40) || r.city;
+  const text = String(o.body || '').slice(0, 3000);
+  const link = gcalUrl_(title, start, end, place, text);
+  const html = '<div style="font-family:sans-serif;line-height:1.7;color:#3A2A18">' +
+    htmlEsc_(text).replace(/\n/g, '<br>') +
+    '<p style="margin:20px 0"><a href="' + htmlEsc_(link) + '" style="background:#3A2A18;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;display:inline-block">📅 加入我的 Google 行事曆</a></p>' +
+    '<p style="font-size:13px;color:#6B5638">用 Apple、Outlook 等其他行事曆的話，請開啟附件 meeting.ics。</p></div>';
+  MailApp.sendEmail({
+    to: r.email, subject: safe_(o.subject, 100) || '我們確定見面囉！',
+    body: text + '\n\n加入 Google 行事曆：' + link,
+    htmlBody: html, attachments: [icsBlob_(uid, title, start, end, place, text)]
+  });
 }
 
 function cancelBooking(key, id) {
