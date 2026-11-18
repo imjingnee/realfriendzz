@@ -100,14 +100,18 @@ textarea{resize:vertical;line-height:1.6}
 #scene .walker.idle .legB{animation:none;opacity:0}
 @keyframes legA{0%{opacity:1}50%{opacity:0}}
 @keyframes legB{0%{opacity:0}50%{opacity:1}}
+#scene .planet{position:absolute;right:0;bottom:var(--bh);width:56px;height:32px}
+#scene .planet svg{animation:sway 2s steps(2) infinite}
 @keyframes sway{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 #scene .eye{display:none}
+#scene .planet.five .eye{display:block;animation:glow .5s steps(1) infinite}
 @keyframes glow{0%{opacity:1}50%{opacity:.35}}
 #scene .walker.five{animation:jump .6s steps(3) 2}
 @keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-16px)}100%{transform:translateY(0)}}
 @media (prefers-reduced-motion:reduce){
   #scene .walker{transition:none}
-  #scene .walker svg,  #scene .legB{opacity:0}
+  #scene .walker svg,#scene .planet svg,#scene .legA,#scene .legB,#scene .b.pop,#scene .walker.five,#scene .planet.five .eye{animation:none}
+  #scene .legB{opacity:0}
 }
 </style>
 </head>
@@ -565,23 +569,30 @@ function walkerSvg(){
   const B=A.map(r=>r.split('').reverse().join(''));
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
 }
+function planetSvg(){
+  let o='';
+  const M={G:'#A8A8A0',g:'#9A9A92',d:'#7A7A72',D:'#3A3A34',M:'#5A5A54'};
+  const moai=["..gGGGGGGg..","..GGGGGGgd..","..GGGGGGgd..","..GDDGGDDgd.","..GDDGGDDgd.","..GGGGGGggd.","..GGGddGgd..","..GGGddGgd..","..GGGddGgd..","..GGGGGGgd..","..GGMMMMgd..","..GGGGGGgd..","...GGGGgd...","..GGGGGGGgd.","..GGGGGGGgd.","..GGGGGGGgd."];
+  o+=pxSprite(moai,M,8,0)+pxRect(11,3,2,2,'#FFE27A','eye')+pxRect(15,3,2,2,'#FFE27A','eye')+pxRect(11,3,1,1,'#fff','eye')+pxRect(15,3,1,1,'#fff','eye');
+  return '<svg viewBox="0 0 28 16">'+o+'</svg>';
+}
 let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
   const el=document.getElementById('scene');if(!el)return;
   const B=STEPS.length-1;
-  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
   sceneReady=true;
   window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
 }
 function updateScene(silent){
   if(!sceneReady)return;
-  const el=document.getElementById('scene'),w=document.getElementById('walker');
+  const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
   const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
   for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-36)*Math.min(step,B)/B)+'px';
-  w.classList.remove('idle','five');
+  w.style.left=((tw-92)*Math.min(step,B)/B)+'px';
+  w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
-  sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five')}},750);
+  sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
   el.setAttribute('aria-valuenow',String(Math.round(step/B*100)));
   scenePrev=step;
 }
