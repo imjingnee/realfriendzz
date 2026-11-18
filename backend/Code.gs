@@ -10,7 +10,7 @@ const ADMIN_KEY = '請改成你自己的密碼';
 const SHEET_REPLY = '回覆';
 const SHEET_ROSTER = '名單';
 const HEAD = ['ID', '時間', '暱稱', '關係', '城市', '可約時段', '見面方式', '想邀請', 'Email', 'IG',
-  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市', '活動', '想去想做', '連結'];
+  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市', '活動', '想去想做', '連結', '最愛角色'];
 const COL = {}; HEAD.forEach((h, i) => COL[h] = i);
 const TZ = 'Asia/Kuala_Lumpur';
 const MAX_ROWS = 1000;
@@ -63,7 +63,7 @@ function rowObj_(r, rowNo) {
     confDate: fmtDate_(r[COL['確認日期']]),
     confTime: isDate_(r[COL['確認時間']]) ? Utilities.formatDate(r[COL['確認時間']], TZ, 'HH:mm') : String(r[COL['確認時間']] || ''),
     confCity: String(r[COL['確認城市']] || ''), eventId: String(r[COL.EventId] || ''),
-    acts: String(r[COL['活動']] || ''), planText: String(r[COL['想去想做']] || ''), planLink: String(r[COL['連結']] || '')
+    hero: String(r[COL['最愛角色']] || ''), acts: String(r[COL['活動']] || ''), planText: String(r[COL['想去想做']] || ''), planLink: String(r[COL['連結']] || '')
   };
 }
 function allRows_() {
@@ -116,7 +116,7 @@ function doPost(e) {
       safe_((d.dates || []).join ? d.dates.join('\n') : d.dates, 600), safe_(d.format, 60),
       safe_((d.invitees || []).join ? d.invitees.join('、') : d.invitees, 300), email, safe_(d.ig, 60),
       safe_(d.role, 30), safe_(d.guess, 20), safe_(d.message, 2000), JSON.stringify(slots), '待安排', '', '', '', '',
-      safe_((d.acts || []).join ? d.acts.slice(0, 4).join('、') : '', 60), safe_(d.planText, 200), safeLink_(d.planLink)
+      safe_((d.acts || []).join ? d.acts.slice(0, 4).join('、') : '', 60), safe_(d.planText, 200), safeLink_(d.planLink), safe_(d.hero, 10)
     ];
     s.appendRow(row);
     SpreadsheetApp.flush();
@@ -136,7 +136,7 @@ function notify_(r) {
   const miss = missing_();
   const lines = [
     `${r.name} 剛剛填了見面邀請卡！`, '',
-    `關係：${r.relation}`, `城市：${r.city}`, `可約時段：\n${r.dates}`, `見面方式：${r.format}`,
+    `關係：${r.relation}`, r.hero ? `最喜歡的小王子角色：${r.hero}` : '', `城市：${r.city}`, `可約時段：\n${r.dates}`, `見面方式：${r.format}`,
     r.invitees ? `想邀請：${r.invitees}` : '',
     (r.acts || r.planText) ? `想一起做：${[r.acts, r.planText].filter(Boolean).join('｜')}` : '', r.planLink ? `連結：${r.planLink}` : '', `聯絡：${[r.email, r.ig && 'IG ' + r.ig].filter(Boolean).join(' / ') || '（沒留）'}`,
     '', `目前已填 ${all.length} 人`,

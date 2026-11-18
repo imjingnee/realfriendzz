@@ -120,7 +120,7 @@ function viewRep(){
     <b>${esc(r.name)}</b><span class="tag ${r.status==='已確認'?'ok':''}">${esc(r.status)}</span> <span class="small">${esc(r.time)}・${esc(r.relation)}</span>
     <div>${esc(r.city)}　${esc(r.format)}${r.invitees?`　想邀請：${esc(r.invitees)}`:''}</div>
     ${planHtml(r)}
-    <div class="small">角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
+    <div class="small">最愛：${esc(r.hero||'—')}　角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
     <div><pre>${esc(r.dates)}</pre></div>
     <div>${contact(r)}</div>
     <button class="btn sm" data-act="book" data-id="${esc(r.id)}">${r.status==='已確認'?'改時間':'安排時間'}</button></div>`).join('');

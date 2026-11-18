@@ -54,6 +54,10 @@ p{margin:.5em 0}
 .opt:disabled{cursor:default}
 .opt.right{border-color:var(--ok);background:#DCEBC9}
 .opt.wrong{border-color:var(--no);background:#F2D3C6}
+.heroes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.hero{font:inherit;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:8px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 3px 0 var(--shade)}
+.hero .hp{display:block;width:48px;height:84px}.hero .hp svg{width:100%;height:100%;image-rendering:pixelated}
+.hero.on{border-color:var(--ink);background:#F3E2B8;transform:translateY(2px);box-shadow:0 1px 0 var(--shade)}
 .cal{background:var(--panel);border:2px solid var(--edge);border-radius:10px;padding:10px;margin:10px 0}
 .calh{display:flex;align-items:center;justify-content:space-between;font-weight:700;margin-bottom:6px}
 .calh button{font:inherit;font-size:1.2rem;line-height:1;background:var(--paper);border:2px solid var(--edge);border-radius:8px;width:44px;height:40px;cursor:pointer;color:var(--ink)}
@@ -386,7 +390,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','plan','format','food','vibe','arrive','topic','result'];
 const CARD_N=8;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -481,6 +485,7 @@ function msg(){
   const pick=(arr,idx)=>idx.map(i=>arr[i]).join('、');
   return [
     `【${CONFIG.title}】`,
+    ...(A.hero?[`最喜歡的《小王子》角色：${HEROES.find(h=>h.k===A.hero).n}`]:[]),
     `我是：${A.name.trim()||'（沒留暱稱）'}（${A.rel===REL.length-1&&A.relOther.trim()?`其他：${A.relOther.trim()}`:REL[A.rel]}）`,
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
@@ -512,6 +517,7 @@ function inviteBox(){
     ${A.invitees.length?`<div class="chips">${A.invitees.map((n,i)=>`<span class="chip">${esc(n)} <button type="button" data-a="delinv" data-v="${i}" aria-label="移除 ${esc(n)}" style="border:0;background:none;font:inherit;cursor:pointer">✕</button></span>`).join('')}</div>`:''}</div>`;
 }
 function canNext(id){
+  if(id==='intro')return !!A.hero;
   if(id==='who')return A.name.trim().length>0&&A.rel>=0;
   if(id==='city')return A.city>=0;
   if(id==='dates')return A.dates.length>0||A.proposals.length>0;
@@ -573,8 +579,11 @@ function view(id){
   if(id==='intro')return `
     <h1>我們來見面吧！</h1>
     <p>${esc(CONFIG.intro)}</p>
+    <h2 style="margin-top:18px">歡迎來跟我約飯！</h2>
+    <p class="sub">先選一位陪你走完這段路的角色：你最喜歡《小王子》裡的哪個角色？</p>
+    <div class="heroes">${HEROES.map((h,i)=>`<button type="button" class="hero ${A.hero===h.k?'on':''}" data-a="hero" data-k="${h.k}" aria-pressed="${A.hero===h.k}"><span class="hp">${walkerSvg(h.k)}</span><b>${i+1}　${h.n}</b></button>`).join('')}</div>
     <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
-    <button class="btn" data-a="next">開始</button>`;
+    <button class="btn" data-a="next" ${canNext('intro')?'':'disabled'}>開始</button>`;
   if(id==='who')return `
     <h2>嗨嗨請問尼是誰～～</h2>
     <label class="f" for="nm">我通常叫你什麼？</label>
@@ -668,13 +677,25 @@ function view(id){
 /* ===== 進度小動畫（原創像素圖，不使用任何現成遊戲的素材） ===== */
 function pxRect(x,y,w,h,f,cls){return '<rect'+(cls?' class="'+cls+'"':'')+' x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"/>'}
 function pxSprite(rows,pal,ox,oy){let o='';for(let y=0;y<rows.length;y++)for(let x=0;x<rows[y].length;x++){const c=rows[y][x];if(c==='.'||!pal[c])continue;o+=pxRect(x+(ox||0),y+(oy||0),1,1,pal[c])}return o}
-function walkerSvg(){
-  const P={Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'};
-  const body=["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."];
+const HEROES=[{k:'prince',n:'小王子'},{k:'fox',n:'狐狸'},{k:'rose',n:'玫瑰'}];
+const WALKERS={
+  prince:{pal:{Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'},
+    body:["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."]},
+  fox:{pal:{O:'#E0862B',o:'#B8651A',W:'#F6EBD2',K:'#3A2A1A',N:'#2B1D12',P:'#3A2A1A',B:'#2B1D12'},
+    body:["..oO........Oo..","..OOo......oOO..","..OOOOooooOOOO..","..OOOOOOOOOOOO..","..OOOOOOOOOOOO..","..OOKOOOOOOKOO..","..OOKOOOOOOKOO..","..OWWOOOOOOWWO..","...WWWWOOWWWW...","....WWWNNWWW....","....WWWWWWWW....","....OOWWWWOO....","...OOOWWWWOOO...","...OOOWWWWOOOOO.","..OOOOWWWWOOOOOO","..OOOOOOOOOOOOOW","..OOOOOOOOOOOOOW","..OOoOOOOOOoOO..","..OOOOOOOOOOOO..","...OOOOOOOOOO..."]},
+  rose:{pal:{R:'#C9303F',r:'#9B1F2E',p:'#E5606E',G:'#4F8A3A',g:'#34692A',L:'#6FB05A',E:'#3A2A1A',P:'#4F8A3A',B:'#2F4F24'},
+    body:["......rRRr......","....rRRppRRr....","...RRpRRRRpRR...","..rRRRRrrRRRRr..","..RRpRRRRRRpRR..","..RRRERRRRERRR..","..rRRERRRRERRr..","..RRRRRppRRRRR..","...rRRRRRRRRr...","....rrRRRRrr....",".....ggGGgg.....","......gGGg......","..LL...GG...LL..",".LLLL..GG..LLLL.",".LLLLL.GG.LLLLL.","..LLL..GG..LLL..","......GGGG......","......GGGG......","......GGGG......","......GGGG......"]}
+};
+function walkerSvg(kind){
+  const W=WALKERS[kind]||WALKERS.prince,P=W.pal,body=W.body;
   const legs=["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
   const A=["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
   const B=A.map(r=>r.split('').reverse().join(''));
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
+}
+function syncHero(){
+  const w=document.getElementById('walker');if(!w)return;
+  const k=A.hero||'prince';if(w.dataset.k!==k){w.innerHTML=walkerSvg(k);w.dataset.k=k}
 }
 function planetSvg(){
   let o='';
@@ -687,7 +708,7 @@ let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
   const el=document.getElementById('scene');if(!el)return;
   const N=STEPS.length+1; // 每一步一格，最後一格是石像的
-  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(N)+'</div>';
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg(A.hero||'prince')+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(N)+'</div>';
   sceneReady=true;
   window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
 }
@@ -709,7 +730,7 @@ function render(keepScroll){
   const pct=Math.round(step/(STEPS.length-1)*100);
   const top=step>0?`<div class="top"><button type="button" class="back" data-a="prev" aria-label="上一步">← 上一步</button></div>`:'';
   document.getElementById('app').innerHTML=top+view(id);
-  updateScene();
+  syncHero();updateScene();
   window.scrollTo(0,keepScroll?y:0);
 }
 function toggle(arr,v,max){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else if(!max||arr.length<max)arr.push(v)}
@@ -738,6 +759,7 @@ document.addEventListener('click',async e=>{
     case 'calnav':if(b.dataset.m){A.calMonth=b.dataset.m;A.dayOpen=''}render(true);break;
     case 'showall':A.showAll=true;A.calMonth='';render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
+    case 'hero':A.hero=b.dataset.k;render(true);break;
     case 'format':A.format=v;render(true);break;
     case 'act':toggle(A.acts,v,0);render(true);break;
     case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
@@ -760,7 +782,7 @@ document.addEventListener('click',async e=>{
       A.sending=true;A.hint='';render(true);
       const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
       const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
-        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,acts:A.acts.map(i=>ACTS[i]),planText:A.actText.trim(),planLink:normLink(A.actLink),message:msg()};
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,hero:(HEROES.find(h=>h.k===A.hero)||{}).n||'',acts:A.acts.map(i=>ACTS[i]),planText:A.actText.trim(),planLink:normLink(A.actLink),message:msg()};
       const jobs=[];
       if(CONFIG.sheetUrl)jobs.push((async()=>{
         const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
