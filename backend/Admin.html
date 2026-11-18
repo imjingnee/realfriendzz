@@ -59,7 +59,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const WD=['日','一','二','三','四','五','六'];
 function fmtDay(ds){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');if(!m)return ds||'';const d=new Date(+m[1],+m[2]-1,+m[3]);return `${+m[2]}/${+m[3]}（${WD[d.getDay()]}）`}
-function slotLabel(s){return `${s.city} ${fmtDay(s.d)}${s.to&&s.to!==s.d?'–'+fmtDay(s.to):''}${s.note?' '+s.note:''}`}
+function slotLabel(s){if(s.prop)return `提議：${fmtDay(s.d)}${s.note?' '+s.note:''}${s.place?'（'+s.place+'）':''}`;return `${s.city} ${fmtDay(s.d)}${s.to&&s.to!==s.d?'–'+fmtDay(s.to):''}${s.note?' '+s.note:''}`}
 function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display='none',5000)}
 function call(fn,...args){
   return new Promise((ok,bad)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>bad(new Error(e&&e.message||String(e))))[fn](KEY,...args));
@@ -92,7 +92,7 @@ function viewCal(){
     <div class="small">${contact(r)}</div>
     <button class="btn sm" data-act="book" data-id="${esc(r.id)}">改時間</button> <button class="btn sm" data-act="cancel" data-id="${esc(r.id)}">取消</button></div>`).join(''):'<p class="small">還沒有。從下面點朋友的名字就能安排。</p>';
   const days={};
-  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.forEach(s=>{
+  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>!s.prop).forEach(s=>{
     const k=s.d+'|'+s.city+'|'+s.note;((days[s.d]=days[s.d]||{})[s.city+'|'+s.note]=(days[s.d][s.city+'|'+s.note]||{s:s,p:[]})).p.push(r)}));
   const ds=Object.keys(days).sort();
   h+=`<h2>還沒安排的人，各時段誰可以（點名字來安排）</h2>`;
@@ -102,6 +102,9 @@ function viewCal(){
     Object.values(days[d]).map(x=>`<div class="slot"><b>${esc(x.s.city)} ${esc(x.s.note)}</b>：`+
       x.p.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.city)}" data-note="${esc(x.s.note)}">${esc(r.name)}</button>`).join('')+`</div>`).join('')+`</div>`;
   }).join(''):'<p class="small">目前沒有待安排的時段。</p>';
+  const props=[];D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>s.prop).forEach(s=>props.push({r:r,s:s})));
+  props.sort((a,b)=>(a.s.d+a.s.note).localeCompare(b.s.d+b.s.note));
+  if(props.length)h+=`<h2>對方提議的時間（${props.length}）<span class="tag">反過來約你</span></h2>`+props.map(x=>`<div class="slot"><b>${esc(fmtDay(x.s.d))} ${esc(x.s.note)}</b>${x.s.place?`　${esc(x.s.place)}`:''}：<button class="chip" data-act="book" data-id="${esc(x.r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.place||x.r.city)}" data-note="${esc(x.s.note)}">${esc(x.r.name)}</button></div>`).join('');
   const none=D.rows.filter(r=>r.status!=='已確認'&&!r.slots.length);
   if(none.length)h+=`<h2>沒選到時段／時間都不行（${none.length}）</h2>`+none.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}">${esc(r.name)}</button>`).join('')+`<p class="small">這些人要你再跟他們約，點名字可手動指定日期。</p>`;
   return h;
@@ -127,9 +130,9 @@ function viewRoster(){
 const NOTE_T=n=>/早/.test(n)?['09:00','11:30']:/晚/.test(n)?['18:30','21:00']:/午/.test(n)?['12:00','14:00']:['12:00','14:00'];
 function openBook(id,pre){
   const r=D.rows.find(x=>x.id===id);if(!r)return;
-  const first=r.slots[0]||{};
+  const first=r.slots.find(x=>!x.prop)||r.slots[0]||{};
   const d=(pre&&pre.d)||r.confDate||first.d||'';
-  const city=(pre&&pre.city)||r.confCity||first.city||r.city;
+  const city=(pre&&pre.city)||r.confCity||(first.prop?(first.place||r.city):first.city)||r.city;
   const [s0,e0]=r.confTime?r.confTime.split('–'):NOTE_T((pre&&pre.note)||first.note||'');
   cur={r:r};
   $('#box').innerHTML=`<h2 style="margin-top:0">安排：${esc(r.name)}</h2>

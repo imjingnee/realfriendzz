@@ -379,7 +379,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -420,13 +420,18 @@ function pickedSlots(){
   const out=[];A.dates.forEach(k=>{const m=/^(\d+)\|(\d{4}-\d{2}-\d{2})\|(.+)$/.exec(k);if(m&&CONFIG.trips[+m[1]])out.push({ci:+m[1],d:m[2],p:m[3]})});
   return out;
 }
-function slotsData(){return pickedSlots().map(x=>({city:CONFIG.trips[x.ci].city,d:x.d,to:'',note:x.p}))}
+function slotsData(){
+  const a=pickedSlots().map(x=>({city:CONFIG.trips[x.ci].city,d:x.d,to:'',note:x.p}));
+  A.proposals.forEach(q=>q.periods.forEach(p=>a.push({city:q.place||'（對方提議）',d:q.d,to:'',note:p,prop:true,place:q.place})));
+  return a;
+}
 function pickedText(){
   const by={};pickedSlots().forEach(x=>{((by[x.ci]=by[x.ci]||{})[x.d]=(by[x.ci][x.d]||[])).push(x.p)});
   return CONFIG.trips.map((t,ci)=>by[ci]?`${t.city} `+Object.keys(by[ci]).sort().map(d=>`${fmtDay(d)} ${PERIODS.filter(p=>by[ci][d].includes(p)).join('、')}`).join('；'):null).filter(Boolean);
 }
 function dateLabels(){
   const out=pickedText();
+  A.proposals.forEach(q=>out.push(`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`));
   if(A.dates.includes('none'))out.push('這些時間都不行，我再告訴你');
   return out;
 }
@@ -491,7 +496,7 @@ function inviteBox(){
 function canNext(id){
   if(id==='who')return A.name.trim().length>0&&A.rel>=0;
   if(id==='city')return A.city>=0;
-  if(id==='dates')return A.dates.length>0;
+  if(id==='dates')return A.dates.length>0||A.proposals.length>0;
   if(id==='format')return A.format>=0;
   if(id==='vibe')return A.vibe>=0;
   if(id==='arrive')return A.arrive>=0;
@@ -524,6 +529,18 @@ function calView(home,showAll){
   const txt=pickedText();
   if(txt.length)h+=`<div class="reveal"><b>你選了：</b><br>${txt.map(esc).join('<br>')}</div>`;
   return h;
+}
+function propView(){
+  const list=A.proposals.length?`<div class="reveal"><b>我的提議：</b><br>${A.proposals.map((q,i)=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
+  if(!A.propOpen)return `<p class="sub">日曆上沒有適合你的？換你來約我！</p><button type="button" class="opt" data-a="propopen">＋ 我想提議別的時間</button>${list}`;
+  const today=new Date(),min=`${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
+  return `<div class="cal"><b>我想約…</b>
+    <label class="f" for="pd">哪一天？</label><input id="pd" type="date" min="${min}" value="${esc(A.pd)}" data-i="pd">
+    <label class="f">什麼時段？（可多選）</label>
+    <div class="btnrow">${PERIODS.map(p=>`<button type="button" class="opt ${A.pp.includes(p)?'on':''}" data-a="pper" data-p="${p}" style="flex:1 1 90px;text-align:center">${p}</button>`).join('')}</div>
+    <label class="f" for="pl">城市或地點（選填）</label><input id="pl" type="text" maxlength="40" placeholder="例如：吉隆坡、你想去的咖啡廳" value="${esc(A.pplace)}" data-i="pplace">
+    ${A.proposals.length>=3?'<p class="small">最多提議 3 個。</p>':`<p><button type="button" class="btn" data-a="propadd" ${A.pd&&A.pp.length?'':'disabled'} style="margin-top:12px">加入這個提議</button></p>`}
+    <button type="button" class="link" data-a="propopen">收起</button></div>${list}`;
 }
 function view(id){
   if(id==='intro')return `
@@ -561,7 +578,7 @@ function view(id){
     let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，再選早上、中午或晚上。可以選很多天。</p>`;
     html+=calView(home,showAll);
     if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他日子</button>`;
-    html+=`<div class="grp">其他</div><div class="stack">${dateBtn('none','這些時間都不行，我再告訴你')}</div>
+    html+=`<div class="grp">想約別的時間？</div>${propView()}<div class="stack" style="margin-top:10px">${dateBtn('none','都不行，之後我再告訴你')}</div>
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
   }
@@ -670,6 +687,10 @@ document.addEventListener('click',async e=>{
     case 'rel':A.rel=v;render(true);break;
     case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
     case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false;A.calMonth='';A.dayOpen=''}render(true);break;
+    case 'propopen':A.propOpen=!A.propOpen;render(true);break;
+    case 'pper':{const p=b.dataset.p;const i=A.pp.indexOf(p);if(i>=0)A.pp.splice(i,1);else A.pp.push(p);render(true);break}
+    case 'propadd':if(A.pd&&A.pp.length&&A.proposals.length<3){A.proposals.push({d:A.pd,periods:PERIODS.filter(p=>A.pp.includes(p)),place:A.pplace.trim().slice(0,40)});A.pd='';A.pp=[];A.pplace='';A.propOpen=false}render(true);break;
+    case 'propdel':A.proposals.splice(v,1);render(true);break;
     case 'day':A.dayOpen=A.dayOpen===b.dataset.d?'':b.dataset.d;render(true);break;
     case 'calnav':if(b.dataset.m){A.calMonth=b.dataset.m;A.dayOpen=''}render(true);break;
     case 'showall':A.showAll=true;A.calMonth='';render(true);break;
@@ -725,6 +746,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
+  if(k==='pd'||k==='pplace'){A[k]=e.target.value;const ab=document.querySelector('[data-a=propadd]');if(ab)ab.disabled=!(A.pd&&A.pp.length);return}
   if(k){A[k]=e.target.value;if(k==='email'||k==='ig'){const o=document.getElementById('out');if(o)o.value=msg()}if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
 });
 initScene();

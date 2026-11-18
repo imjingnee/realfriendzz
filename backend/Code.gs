@@ -101,7 +101,8 @@ function doPost(e) {
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json_({ ok: false, error: 'email' });
     const slots = (Array.isArray(d.slots) ? d.slots : []).slice(0, 40).map(x => ({
       city: String(x.city || '').slice(0, 20), d: String(x.d || '').slice(0, 10),
-      to: String(x.to || '').slice(0, 10), note: String(x.note || '').slice(0, 30)
+      to: String(x.to || '').slice(0, 10), note: String(x.note || '').slice(0, 30),
+      prop: x.prop ? 1 : 0, place: String(x.place || '').slice(0, 60)
     }));
     const id = Utilities.getUuid().slice(0, 8);
     const row = [
