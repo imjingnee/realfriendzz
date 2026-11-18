@@ -10,7 +10,7 @@ const ADMIN_KEY = '請改成你自己的密碼';
 const SHEET_REPLY = '回覆';
 const SHEET_ROSTER = '名單';
 const HEAD = ['ID', '時間', '暱稱', '關係', '城市', '可約時段', '見面方式', '想邀請', 'Email', 'IG',
-  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市'];
+  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市', '活動', '想去想做', '連結'];
 const COL = {}; HEAD.forEach((h, i) => COL[h] = i);
 const TZ = 'Asia/Kuala_Lumpur';
 const MAX_ROWS = 1000;
@@ -33,6 +33,10 @@ function safe_(v, max) {
   let t = String(v == null ? '' : v).replace(/\r/g, '').trim().slice(0, max || 200);
   if (/^[=+\-@]/.test(t)) t = "'" + t;
   return t;
+}
+function safeLink_(v) {
+  const t = String(v || '').trim().slice(0, 300);
+  return /^https?:\/\/[^\s]+$/i.test(t) ? t : '';
 }
 function auth_(key) {
   if (key !== ADMIN_KEY || ADMIN_KEY === '請改成你自己的密碼') throw new Error('沒有權限');
@@ -58,7 +62,8 @@ function rowObj_(r, rowNo) {
     status: String(r[COL['狀態']] || '待安排'),
     confDate: fmtDate_(r[COL['確認日期']]),
     confTime: isDate_(r[COL['確認時間']]) ? Utilities.formatDate(r[COL['確認時間']], TZ, 'HH:mm') : String(r[COL['確認時間']] || ''),
-    confCity: String(r[COL['確認城市']] || ''), eventId: String(r[COL.EventId] || '')
+    confCity: String(r[COL['確認城市']] || ''), eventId: String(r[COL.EventId] || ''),
+    acts: String(r[COL['活動']] || ''), planText: String(r[COL['想去想做']] || ''), planLink: String(r[COL['連結']] || '')
   };
 }
 function allRows_() {
@@ -81,7 +86,8 @@ function missing_() {
 
 /* ---------- 第一次執行：建立分頁並授權 ---------- */
 function setup() {
-  sheet_(SHEET_REPLY, HEAD);
+  const rs = sheet_(SHEET_REPLY, HEAD);
+  rs.getRange(1, 1, 1, HEAD.length).setValues([HEAD]); // 補上新欄位的標題
   sheet_(SHEET_ROSTER, ['暱稱（把你要邀請的朋友一個一個填在這一欄）']);
   CalendarApp.getDefaultCalendar();
   Logger.log('完成。請繼續照 README 部署成網頁應用程式。');
@@ -109,7 +115,8 @@ function doPost(e) {
       id, new Date(), name, safe_(d.relation, 60), safe_(d.city, 40),
       safe_((d.dates || []).join ? d.dates.join('\n') : d.dates, 600), safe_(d.format, 60),
       safe_((d.invitees || []).join ? d.invitees.join('、') : d.invitees, 300), email, safe_(d.ig, 60),
-      safe_(d.role, 30), safe_(d.guess, 20), safe_(d.message, 2000), JSON.stringify(slots), '待安排', '', '', '', ''
+      safe_(d.role, 30), safe_(d.guess, 20), safe_(d.message, 2000), JSON.stringify(slots), '待安排', '', '', '', '',
+      safe_((d.acts || []).join ? d.acts.slice(0, 4).join('、') : '', 60), safe_(d.planText, 200), safeLink_(d.planLink)
     ];
     s.appendRow(row);
     SpreadsheetApp.flush();
@@ -130,7 +137,8 @@ function notify_(r) {
   const lines = [
     `${r.name} 剛剛填了見面邀請卡！`, '',
     `關係：${r.relation}`, `城市：${r.city}`, `可約時段：\n${r.dates}`, `見面方式：${r.format}`,
-    r.invitees ? `想邀請：${r.invitees}` : '', `聯絡：${[r.email, r.ig && 'IG ' + r.ig].filter(Boolean).join(' / ') || '（沒留）'}`,
+    r.invitees ? `想邀請：${r.invitees}` : '',
+    (r.acts || r.planText) ? `想一起做：${[r.acts, r.planText].filter(Boolean).join('｜')}` : '', r.planLink ? `連結：${r.planLink}` : '', `聯絡：${[r.email, r.ig && 'IG ' + r.ig].filter(Boolean).join(' / ') || '（沒留）'}`,
     '', `目前已填 ${all.length} 人`,
     rosterNames_().length ? (miss.length ? `還沒填（${miss.length}）：${miss.join('、')}` : '名單上的人都填完了 🎉') : '（「名單」分頁還沒填，填了就能看到誰還沒填）',
     '', `到後台排時間：${adminUrl_()}`

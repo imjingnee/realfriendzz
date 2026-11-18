@@ -79,6 +79,11 @@ function render(){
   document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#view').innerHTML=tab==='cal'?viewCal():tab==='rep'?viewRep():viewRoster();
 }
+function planHtml(r){
+  const t=[r.acts,r.planText].filter(Boolean).map(esc).join('｜');
+  const l=/^https?:\/\//i.test(r.planLink||'')?` <a href="${esc(r.planLink)}" target="_blank" rel="noopener">連結</a>`:'';
+  return (t||l)?`<div>🍽 想一起做：${t}${l}</div>`:'';
+}
 function contact(r){
   const p=[];
   if(r.email)p.push(`✉ ${esc(r.email)}`);
@@ -114,6 +119,7 @@ function viewRep(){
   return D.rows.slice().reverse().map(r=>`<div class="card ${r.status==='已確認'?'done':''}">
     <b>${esc(r.name)}</b><span class="tag ${r.status==='已確認'?'ok':''}">${esc(r.status)}</span> <span class="small">${esc(r.time)}・${esc(r.relation)}</span>
     <div>${esc(r.city)}　${esc(r.format)}${r.invitees?`　想邀請：${esc(r.invitees)}`:''}</div>
+    ${planHtml(r)}
     <div class="small">角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
     <div><pre>${esc(r.dates)}</pre></div>
     <div>${contact(r)}</div>
@@ -137,6 +143,7 @@ function openBook(id,pre){
   cur={r:r};
   $('#box').innerHTML=`<h2 style="margin-top:0">安排：${esc(r.name)}</h2>
   <div class="small">${contact(r)}</div>
+  ${planHtml(r)}
   ${r.slots.length?`<p class="small">他可以的時段：${r.slots.map(s=>esc(slotLabel(s))).join('、')}</p>`:'<p class="small">他沒有選時段，請自己指定日期。</p>'}
   <label>日期</label><input type="date" id="bd" value="${esc(d)}">
   <div class="row"><div><label>開始</label><input type="time" id="bs" value="${esc(s0)}"></div><div><label>結束</label><input type="time" id="be" value="${esc(e0)}"></div></div>

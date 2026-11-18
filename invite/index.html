@@ -164,6 +164,7 @@ const CONFIG={
 };
 
 const REL=['很久沒見的朋友','還沒見過面的朋友','常常見面的朋友','其他'];
+const ACTS=['吃飯','喝咖啡／聊天','逛逛／玩','其他'];
 const FORMAT=['一對一見面','小聚（我們幾個朋友一起）','都可以'];
 const FOOD=['葷素都吃','偏素或吃素','有忌口或過敏（請在下方備註）','不吃辣','愛吃辣','愛甜點'];
 const VIBE=['安靜好聊天','熱鬧有氣氛','邊吃邊玩點小遊戲','都可以'];
@@ -382,9 +383,9 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 })();
 
 /* ===== 狀態 ===== */
-const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
-const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const STEPS=['intro','who','g0','g1','g2','g3','city','dates','plan','format','food','vibe','arrive','topic','result'];
+const CARD_N=8;
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -407,6 +408,9 @@ const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.gu
 const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
+const normLink=v=>{v=(v||'').trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v};
+const linkOK=v=>{v=normLink(v);return !v||(/^https?:\/\/[^\s]+\.[^\s]+$/i.test(v)&&v.length<=300)};
+const planLabel=()=>A.acts.some(i=>ACTS[i]==='吃飯')?'想吃什麼、想去哪間餐廳／哪個地方？':'你想做什麼、想去哪裡？';
 const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 const PERIODS=['早上','中午','晚上'];
 const pad2=n=>String(n).padStart(2,'0');
@@ -478,6 +482,9 @@ function msg(){
     `我是：${A.name.trim()||'（沒留暱稱）'}（${A.rel===REL.length-1&&A.relOther.trim()?`其他：${A.relOther.trim()}`:REL[A.rel]}）`,
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
+    ...((A.acts.length||A.actText.trim()||A.actLink.trim())?[`想一起做：${A.acts.map(i=>ACTS[i]).join('、')||'（沒選）'}`]:[]),
+    ...(A.actText.trim()?[`想去／想做：${A.actText.trim()}`]:[]),
+    ...(A.actLink.trim()?[`連結：${normLink(A.actLink)}`]:[]),
     `見面方式：${FORMAT[A.format]}`,
     ...((A.email.trim()||A.ig.trim())?[`聯絡：${[A.email.trim(),A.ig.trim()&&'IG '+A.ig.trim()].filter(Boolean).join('／')}`]:[]),
     ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
@@ -506,6 +513,7 @@ function canNext(id){
   if(id==='who')return A.name.trim().length>0&&A.rel>=0;
   if(id==='city')return A.city>=0;
   if(id==='dates')return A.dates.length>0||A.proposals.length>0;
+  if(id==='plan')return linkOK(A.actLink);
   if(id==='format')return A.format>=0;
   if(id==='vibe')return A.vibe>=0;
   if(id==='arrive')return A.arrive>=0;
@@ -599,17 +607,25 @@ function view(id){
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
   }
-  if(id==='format')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}${inviteBox()}
+  if(id==='plan')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你想跟我一起做什麼？</h2><p class="sub">選填，沒有想法也可以直接按下一步，交給我安排。</p>
+    ${opts(ACTS,A.acts,'act')}
+    ${A.acts.length?`<label class="f" for="at">${esc(planLabel())}（選填）</label>
+    <input id="at" type="text" maxlength="80" placeholder="例如：想吃某某餐廳、想去夜市、想爬山" value="${esc(A.actText)}" data-i="actText">
+    <label class="f" for="al">貼上連結（選填）</label>
+    <input id="al" type="url" inputmode="url" maxlength="300" placeholder="Google 地圖、IG 或網站連結" value="${esc(A.actLink)}" data-i="actLink">
+    <p class="small" id="alh" role="status">${linkOK(A.actLink)?'':'連結格式好像不太對，請檢查一下，或清空不填。'}</p>`:''}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='food')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
+  if(id==='format')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}${inviteBox()}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='food')return `<p class="small">見面卡 5 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
     <label class="f" for="fn">忌口或過敏備註（選填）</label>
     <input id="fn" type="text" maxlength="40" placeholder="例如：不吃牛、花生過敏" value="${esc(A.foodNote)}" data-i="foodNote">
     <button class="btn" data-a="next">下一步</button>`;
-  if(id==='vibe')return `<p class="small">見面卡 5 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
+  if(id==='vibe')return `<p class="small">見面卡 6 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='arrive')return `<p class="small">見面卡 6 / ${CARD_N}</p><h2>久違見面，或第一次見面，你通常會？</h2>${opts(ARR,A.arrive,'arrive')}
+  if(id==='arrive')return `<p class="small">見面卡 7 / ${CARD_N}</p><h2>久違見面，或第一次見面，你通常會？</h2>${opts(ARR,A.arrive,'arrive')}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='topic')return `<p class="small">見面卡 7 / ${CARD_N}</p><h2>你最想聊什麼？</h2><p class="sub">最多選 3 個，也可以略過。</p>${opts(TOPIC,A.topic,'topic')}
+  if(id==='topic')return `<p class="small">見面卡 8 / ${CARD_N}</p><h2>你最想聊什麼？</h2><p class="sub">最多選 3 個，也可以略過。</p>${opts(TOPIC,A.topic,'topic')}
     <button class="btn" data-a="next">看我的見面卡</button>`;
   if(id==='result'){
     const r=role(),m=msg();
@@ -720,6 +736,7 @@ document.addEventListener('click',async e=>{
     case 'showall':A.showAll=true;A.calMonth='';render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
     case 'format':A.format=v;render(true);break;
+    case 'act':toggle(A.acts,v,0);render(true);break;
     case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
     case 'delinv':A.invitees.splice(v,1);render(true);break;
     case 'food':toggle(A.food,v,0);render(true);break;
@@ -740,7 +757,7 @@ document.addEventListener('click',async e=>{
       A.sending=true;A.hint='';render(true);
       const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
       const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
-        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,message:msg()};
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,acts:A.acts.map(i=>ACTS[i]),planText:A.actText.trim(),planLink:normLink(A.actLink),message:msg()};
       const jobs=[];
       if(CONFIG.sheetUrl)jobs.push((async()=>{
         const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
@@ -770,6 +787,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
+  if(k==='actLink'){A.actLink=e.target.value;const nb=document.querySelector('.btn[data-a=next]'),h=document.getElementById('alh');if(nb)nb.disabled=!linkOK(A.actLink);if(h)h.textContent=linkOK(A.actLink)?'':'連結格式好像不太對，請檢查一下，或清空不填。';return}
   if(k==='pd'||k==='pplace'){A[k]=e.target.value;const ab=document.querySelector('[data-a=propadd]');if(ab)ab.disabled=!(A.pd&&A.pp.length);return}
   if(k){A[k]=e.target.value;if(k==='email'||k==='ig'){const o=document.getElementById('out');if(o)o.value=msg()}if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
 });
