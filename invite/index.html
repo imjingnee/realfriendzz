@@ -113,6 +113,9 @@ textarea{resize:vertical;line-height:1.6}
 #scene svg{width:100%;height:100%;shape-rendering:crispEdges;display:block}
 #scene .walker svg{animation:bob .5s steps(1) infinite}
 #scene .walker.idle svg{animation:none}
+#scene .walker[data-k=rose] svg{animation:hop .5s steps(1) infinite}
+#scene .walker[data-k=rose].idle svg{animation:none}
+@keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 #scene .legA{animation:legA .5s steps(1) infinite}
 #scene .legB{animation:legB .5s steps(1) infinite}
@@ -645,7 +648,7 @@ function view(id){
     <div class="card">
       <div class="em">${r.svg}</div>
       <p class="small">你是我的故事裡的…</p><div class="rn">${esc(A.name.trim()||'未留暱稱')}　${r.n}</div>
-      <div class="tg">${r.crown}・${r.tag}赴約者</div>
+      <div class="tg">${r.tag}赴約者</div>
       <p class="ln">${esc(r.line)}</p>
       <dl class="kv">
         <dt>城市</dt><dd>${esc(cityName())}</dd>
@@ -681,15 +684,18 @@ const HEROES=[{k:'prince',n:'小王子'},{k:'fox',n:'狐狸'},{k:'rose',n:'玫�
 const WALKERS={
   prince:{pal:{Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'},
     body:["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."]},
-  fox:{pal:{O:'#E0862B',o:'#B8651A',W:'#F6EBD2',K:'#3A2A1A',N:'#2B1D12',P:'#3A2A1A',B:'#2B1D12'},
-    body:["..oO........Oo..","..OOo......oOO..","..OOOOooooOOOO..","..OOOOOOOOOOOO..","..OOOOOOOOOOOO..","..OOKOOOOOOKOO..","..OOKOOOOOOKOO..","..OWWOOOOOOWWO..","...WWWWOOWWWW...","....WWWNNWWW....","....WWWWWWWW....","....OOWWWWOO....","...OOOWWWWOOO...","...OOOWWWWOOOOO.","..OOOOWWWWOOOOOO","..OOOOOOOOOOOOOW","..OOOOOOOOOOOOOW","..OOoOOOOOOoOO..","..OOOOOOOOOOOO..","...OOOOOOOOOO..."]},
-  rose:{pal:{R:'#C9303F',r:'#9B1F2E',p:'#E5606E',G:'#4F8A3A',g:'#34692A',L:'#6FB05A',E:'#3A2A1A',P:'#4F8A3A',B:'#2F4F24'},
-    body:["......rRRr......","....rRRppRRr....","...RRpRRRRpRR...","..rRRRRrrRRRRr..","..RRpRRRRRRpRR..","..RRRERRRRERRR..","..rRRERRRRERRr..","..RRRRRppRRRRR..","...rRRRRRRRRr...","....rrRRRRrr....",".....ggGGgg.....","......gGGg......","..LL...GG...LL..",".LLLL..GG..LLLL.",".LLLLL.GG.LLLLL.","..LLL..GG..LLL..","......GGGG......","......GGGG......","......GGGG......","......GGGG......"]}
+  fox:{pal:{O:'#E0862B',o:'#B8651A',T:'#D17A22',W:'#F6EBD2',K:'#3A2A1A',N:'#6B3F1A',P:'#C9751F',B:'#F6EBD2'},
+    body:["..oO........Oo..","..OOo......oOO..","..OOOOooooOOOO..","..OOOOOOOOOOOO..","..OOOOOOOOOOOO..","..OOKOOOOOOKOO..","..OOKOOOOOOKOO..","..OWWOOOOOOWWO..","...WWWWOOWWWW...","....WWWNNWWW....","....WWWWWWWW....","....OOWWWWOO....","...OOOWWWWOOO...","...OOOWWWWOOO...","..OOOOWWWWOOOO..","..OOOOOWWOOOOOT.","..OOOOOOOOOOOTTT","..OOoOOOOOOOTTTT","..OOOOOOOOOOTTTT","...OOOOOOOOO.TTW"],
+    legs:["....PPPPPPPP.TTW","....PPPPPPPP.TWW","....PPP..PPP..W.","....PPP..PPP....","....PPP..PPP...."]},
+  rose:{pal:{R:'#D6384B',r:'#A3202F',p:'#F27B8A',d:'#7A1420',G:'#4F8A3A',g:'#34692A',L:'#7FB069',l:'#4D7A3A',E:'#3A2A1A',B:'#2F4F24'},
+    body:["......rrrr......","....rrRRRRrr....","...rRRppRRRRr...","..rRRpRRRRRRRr..","..rRRRRrrRRRRr..","..rRRRrRRrRRRr..","..rRRERRRRERRr..","...rRRRRRRRRr...","....rrRRRRrr....",".....rrrrrr.....",".....gGGGGg.....","......gGGg......","..lL...GG...Ll..",".lLLL..GG..LLLl.",".lLLLL.GG.LLLLl.","..lLL..GG..LLl..","......GGGG......","......GGGG......",".......GG.......",".......GG......."],
+    legs:[".......GG.......",".......GG.......",".......GG.......",".......GG.......",".......GG......."],
+    A:["......GGG.......","......BBBB......","......BBBB......"],hop:1}
 };
 function walkerSvg(kind){
   const W=WALKERS[kind]||WALKERS.prince,P=W.pal,body=W.body;
-  const legs=["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
-  const A=["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
+  const legs=W.legs||["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
+  const A=W.A||["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
   const B=A.map(r=>r.split('').reverse().join(''));
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
 }
