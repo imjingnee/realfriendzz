@@ -368,7 +368,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -437,6 +437,7 @@ function msg(){
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
     `見面方式：${FORMAT[A.format]}`,
+    ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
     `飲食：${A.food.length?pick(FOOD,A.food):'沒有特別'}${A.foodNote.trim()?`（備註：${A.foodNote.trim()}）`:''}`,
     `喜歡的氣氛：${VIBE[A.vibe]}`,
     `想聊：${A.topic.length?pick(TOPIC,A.topic):'都可以'}`,
@@ -450,6 +451,13 @@ function msg(){
 /* ===== 畫面 ===== */
 function opts(list,sel,act,extra=''){
   return `<div class="stack">${list.map((t,i)=>`<button type="button" class="opt ${(Array.isArray(sel)?sel.includes(i):sel===i)?'on':''}" data-a="${act}" data-v="${i}" ${extra}>${esc(t)}</button>`).join('')}</div>`;
+}
+const groupOK=()=>A.format===1||A.format===2;
+function inviteBox(){
+  if(!groupOK())return '';
+  return `<div class="card" style="margin-top:14px"><label class="f" for="iv">有想一起見面的朋友嗎？你希望我再邀請誰？，最多 5 位，選填）</label>
+    <div class="btnrow"><input id="iv" type="text" maxlength="40" placeholder="填對方的名字" value="${esc(A.inviteInput)}" data-i="inviteInput" style="flex:2 1 160px"><button type="button" class="btn ghost" data-a="addinv" style="flex:1 1 80px" ${A.invitees.length>=5?'disabled':''}>新增</button></div>
+    ${A.invitees.length?`<div class="chips">${A.invitees.map((n,i)=>`<span class="chip">${esc(n)} <button type="button" data-a="delinv" data-v="${i}" aria-label="移除 ${esc(n)}" style="border:0;background:none;font:inherit;cursor:pointer">✕</button></span>`).join('')}</div>`:''}</div>`;
 }
 function canNext(id){
   if(id==='who')return A.name.trim().length>0&&A.rel>=0;
@@ -510,7 +518,7 @@ function view(id){
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
   }
-  if(id==='format')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}
+  if(id==='format')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}${inviteBox()}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
   if(id==='food')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
     <label class="f" for="fn">忌口或過敏備註（選填）</label>
@@ -630,6 +638,8 @@ document.addEventListener('click',async e=>{
     case 'showall':A.showAll=true;render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
     case 'format':A.format=v;render(true);break;
+    case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
+    case 'delinv':A.invitees.splice(v,1);render(true);break;
     case 'food':toggle(A.food,v,0);render(true);break;
     case 'vibe':A.vibe=v;render(true);break;
     case 'arrive':A.arrive=v;render(true);break;
@@ -658,6 +668,7 @@ document.addEventListener('click',async e=>{
           city:cityName(),
           dates:dateLabels(),
           format:FORMAT[A.format],
+          invitees:groupOK()?A.invitees.slice(0,5):[],
           role:r.n,
           guessHits:hits(),
           guessTotal:scored(),
@@ -676,6 +687,7 @@ document.addEventListener('click',async e=>{
       render(true);break}
   }
 });
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
   if(k){A[k]=e.target.value;if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
