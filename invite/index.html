@@ -128,6 +128,16 @@ const CONFIG={
     {city:'關丹',when:[{d:'2026-12-17',note:'晚上'},{d:'2026-12-18',note:'晚上'},{d:'2026-12-19',note:'晚上'},{d:'2026-12-20',note:'晚上'},{d:'2026-12-21',note:'早上'}]},
     {city:'馬六甲',when:[{d:'2026-12-22',note:'早、午、晚'}]},
     {city:'古來',when:[{d:'2026-12-23',note:'早、午、晚'},{d:'2026-12-24',note:'早、午、晚'}]}
+  ],
+
+  /* ★ 「猜猜我」的答案：answer 是正確選項的順序（從 0 開始），note 是揭曉時多說的一句話（選填） */
+  guess:[
+    {q:'約吃飯的時候，你覺得我比較喜歡？',opts:['安靜好聊天','熱鬧有氣氛','有特色的店','隨便吃就好'],answer:0,note:''},
+    /* answer 可以是一個數字，也可以是一串數字（有多個正確答案） */
+    {q:'你覺得我最近最忙的是什麼？',opts:['生活雜事','工作','創作計畫','學業或研究','創業'],answer:[2,3,4],note:''},
+    {q:'你覺得我心情不好的時候，最常做的是？',opts:['一個人安靜待著','找人聊聊','吃好吃的','睡一覺','做喜歡的事'],answer:0,note:'我還在學習如何求救！希望有一天我心情不好的時候是來找你分享啊我的朋友！'},
+    /* answer:null 代表這題沒有標準答案（每個朋友不同），不計分，只會記錄在回傳訊息裡 */
+    {q:'你覺得你是我的什麼？',opts:['點頭之交（見面會打招呼）','一般朋友（會一起吃飯、聊特定話題）','好朋友（會私下約、知道彼此近況）','摯友（可以不客套，做自己）','知己（很久沒聯絡，見面也像沒分開）'],answer:null,note:'不管你是什麼，當你收到這份邀請卡，就意味著你一定是我生命某個階段很重要的人。'}
   ]
 };
 
@@ -350,9 +360,9 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 })();
 
 /* ===== 狀態 ===== */
-const STEPS=['intro','who','city','dates','format','food','vibe','arrive','topic','result'];
+const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -368,6 +378,11 @@ function fmtWhen(w){
   if(w.note)t+=` ${w.note}`;
   return t;
 }
+const scored=()=>CONFIG.guess.filter(g=>g.answer!=null).length;
+const isRight=(g,v)=>Array.isArray(g.answer)?g.answer.includes(v):v===g.answer;
+const ansText=g=>(Array.isArray(g.answer)?g.answer:[g.answer]).map(k=>g.opts[k]).join('、');
+const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.guess[i],v)).length;
+const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
 function dateLabels(){
@@ -421,7 +436,9 @@ function msg(){
     `喜歡的氣氛：${VIBE[A.vibe]}`,
     `想聊：${A.topic.length?pick(TOPIC,A.topic):'都可以'}`,
     `見面時的我：${ARR[A.arrive]}`,
-    `我的赴約角色：${r.n}`
+    `我的赴約角色：${r.n}`,
+    `猜猜我：猜中 ${hits()} / ${scored()}`,
+    openAns()?`你覺得你是我的：${openAns()}`:null
   ].filter(Boolean).join('\n');
 }
 
@@ -443,6 +460,7 @@ function canNext(id){
   if(id==='format')return A.format>=0;
   if(id==='vibe')return A.vibe>=0;
   if(id==='arrive')return A.arrive>=0;
+  if(id.startsWith('g'))return A.g[+id[1]]>=0;
   return true;
 }
 function dateBtn(k,text){
@@ -462,6 +480,17 @@ function view(id){
     ${opts(REL,A.rel,'rel')}
     ${A.rel===REL.length-1?`<label class="f" for="ro">那你是我的…？（選填）</label><input id="ro" type="text" maxlength="20" placeholder="你來說" value="${esc(A.relOther)}" data-i="relOther">`:''}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id[0]==='g'){
+    const i=+id[1],g=CONFIG.guess[i],done=A.g[i]>=0,open=g.answer==null,ok=!open&&isRight(g,A.g[i]);
+    const list=`<div class="stack">${g.opts.map((t,k)=>{
+      let c='';if(done){if(open){if(k===A.g[i])c='on'}else if(isRight(g,k))c='right';else if(k===A.g[i])c='wrong'}
+      return `<button type="button" class="opt ${c}" data-a="guess" data-v="${k}" ${done?'disabled':''}>${esc(t)}</button>`}).join('')}</div>`;
+    return `
+    <p class="small">慢慢來比較快</p>
+    <h2>${esc(g.q)}</h2>${list}
+    ${done?`<div class="reveal">${open?`<b class="ok">謝謝你告訴我，</b>${esc(g.note)}`:ok?'<b class="ok">天啊你也太了解我了吧！</b>':`<b class="no">啊啊啊沒事！</b>其實是「${esc(ansText(g))}」。`}${g.note&&!open?`<br>${esc(g.note)}`:''}</div>
+    <button class="btn" data-a="next">${i<CONFIG.guess.length-1?'LET\'S GO':'快來拿邀請卡！'}</button>`:''}`;
+  }
   if(id==='city')return `<p class="small">見面卡 1 / ${CARD_N}</p><h2>你想要在哪個城市見到我？</h2>
     ${opts(CONFIG.trips.map(t=>t.city).concat(['其他城市']),A.city,'city')}
     ${isOther()?`<label class="f" for="co">你在哪裡？（選填）</label><input id="co" type="text" maxlength="20" placeholder="例如：新加坡" value="${esc(A.cityOther)}" data-i="cityOther">
@@ -573,6 +602,7 @@ document.addEventListener('click',async e=>{
     case 'next':if(canNext(STEPS[step])){step=Math.min(STEPS.length-1,step+1);A.hint='';render(false)}break;
     case 'prev':step=Math.max(0,step-1);render(false);break;
     case 'rel':A.rel=v;render(true);break;
+    case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
     case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false}render(true);break;
     case 'showall':A.showAll=true;render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
@@ -609,6 +639,8 @@ document.addEventListener('click',async e=>{
           format:FORMAT[A.format],
           invitees:groupOK()?A.invitees.slice(0,5):[],
           role:r.n,
+          guessHits:hits(),
+          guessTotal:scored(),
           message:msg()
         });
         A.sent=true;
