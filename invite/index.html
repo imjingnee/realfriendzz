@@ -455,8 +455,8 @@ function opts(list,sel,act,extra=''){
 const groupOK=()=>A.format===1||A.format===2;
 function inviteBox(){
   if(!groupOK())return '';
-  return `<div class="card" style="margin-top:14px"><label class="f" for="iv">有想一起見面的朋友嗎？你希望我再邀請誰？（選填）</label>
-    <div class="btnrow"><input id="iv" type="text" maxlength="40" placeholder="填對方的名字" value="${esc(A.inviteInput)}" data-i="inviteInput" style="flex:2 1 160px"><button type="button" class="btn ghost" data-a="addinv" style="flex:1 1 80px">新增</button></div>
+  return `<div class="card" style="margin-top:14px"><label class="f" for="iv">有想一起見面的朋友嗎？你希望我再邀請誰？，最多 5 位，選填）</label>
+    <div class="btnrow"><input id="iv" type="text" maxlength="40" placeholder="填對方的名字" value="${esc(A.inviteInput)}" data-i="inviteInput" style="flex:2 1 160px"><button type="button" class="btn ghost" data-a="addinv" style="flex:1 1 80px" ${A.invitees.length>=5?'disabled':''}>新增</button></div>
     ${A.invitees.length?`<div class="chips">${A.invitees.map((n,i)=>`<span class="chip">${esc(n)} <button type="button" data-a="delinv" data-v="${i}" aria-label="移除 ${esc(n)}" style="border:0;background:none;font:inherit;cursor:pointer">✕</button></span>`).join('')}</div>`:''}</div>`;
 }
 function canNext(id){
@@ -638,7 +638,7 @@ document.addEventListener('click',async e=>{
     case 'showall':A.showAll=true;render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
     case 'format':A.format=v;render(true);break;
-    case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<10&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
+    case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
     case 'delinv':A.invitees.splice(v,1);render(true);break;
     case 'food':toggle(A.food,v,0);render(true);break;
     case 'vibe':A.vibe=v;render(true);break;
@@ -668,7 +668,7 @@ document.addEventListener('click',async e=>{
           city:cityName(),
           dates:dateLabels(),
           format:FORMAT[A.format],
-          invitees:groupOK()?A.invitees.slice(0,10):[],
+          invitees:groupOK()?A.invitees.slice(0,5):[],
           role:r.n,
           guessHits:hits(),
           guessTotal:scored(),

@@ -6,7 +6,7 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.keys().hasOnly(['createdAt','name','relation','city','dates','format','invitees','role','guessHits','guessTotal','message'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
-        && (!('invitees' in request.resource.data) || (request.resource.data.invitees is list && request.resource.data.invitees.size() <= 10))
+        && (!('invitees' in request.resource.data) || (request.resource.data.invitees is list && request.resource.data.invitees.size() <= 5))
         && request.resource.data.message is string && request.resource.data.message.size() <= 2000;
       allow read, update, delete: if false;
     }
