@@ -64,9 +64,14 @@ function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';clea
 function call(fn,...args){
   return new Promise((ok,bad)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>bad(new Error(e&&e.message||String(e))))[fn](KEY,...args));
 }
+function diag(t){const e=document.getElementById('sum');if(e)e.textContent=t}
+window.addEventListener('error',ev=>diag('頁面錯誤：'+(ev.message||'未知')+'（請把這行文字抄給 Claude）'));
+window.addEventListener('unhandledrejection',ev=>diag('頁面錯誤：'+((ev.reason&&ev.reason.message)||ev.reason)+'（請把這行文字抄給 Claude）'));
 async function load(){
-  try{const r=await call('adminData');D.rows=r.rows;D.roster=r.roster;D.missing=r.missing;render()}
-  catch(e){$('#sum').textContent='載入失敗：'+e.message}
+  diag('腳本已啟動，正在向試算表要資料…（'+(typeof google!=='undefined'&&google.script&&google.script.run?'連線元件正常':'找不到 google.script.run，請改用無痕視窗只登入你自己的帳號')+'）');
+  const wd=setTimeout(()=>diag('等了 15 秒伺服器還沒回應。請確認：1) 已用「新版本」重新部署 2) 瀏覽器只登入部署後台的那個 Google 帳號（可用無痕視窗） 3) 在 Apps Script 手動執行一次 adminData 看有沒有授權或錯誤訊息'),15000);
+  try{const r=await call('adminData');clearTimeout(wd);if(!r||!r.rows)throw new Error('伺服器回傳空白（可能是資料格式問題）');D.rows=r.rows;D.roster=r.roster;D.missing=r.missing;render()}
+  catch(e){clearTimeout(wd);$('#sum').textContent='載入失敗：'+e.message+'（請把這行文字抄給 Claude）'}
 }
 function render(){
   const total=D.rows.length,conf=D.rows.filter(r=>r.status==='已確認').length;
