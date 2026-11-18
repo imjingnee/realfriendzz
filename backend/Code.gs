@@ -10,7 +10,7 @@ const ADMIN_KEY = '請改成你自己的密碼';
 const SHEET_REPLY = '回覆';
 const SHEET_ROSTER = '名單';
 const HEAD = ['ID', '時間', '暱稱', '關係', '城市', '可約時段', '見面方式', '想邀請', 'Email', 'IG',
-  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市'];
+  '角色', '猜中', '訊息', 'slots', '狀態', '確認日期', '確認時間', 'EventId', '確認城市', '活動', '想去想做', '連結', '最愛角色'];
 const COL = {}; HEAD.forEach((h, i) => COL[h] = i);
 const TZ = 'Asia/Kuala_Lumpur';
 const MAX_ROWS = 1000;
@@ -33,6 +33,10 @@ function safe_(v, max) {
   let t = String(v == null ? '' : v).replace(/\r/g, '').trim().slice(0, max || 200);
   if (/^[=+\-@]/.test(t)) t = "'" + t;
   return t;
+}
+function safeLink_(v) {
+  const t = String(v || '').trim().slice(0, 300);
+  return /^https?:\/\/[^\s]+$/i.test(t) ? t : '';
 }
 function auth_(key) {
   if (key !== ADMIN_KEY || ADMIN_KEY === '請改成你自己的密碼') throw new Error('沒有權限');
@@ -58,7 +62,8 @@ function rowObj_(r, rowNo) {
     status: String(r[COL['狀態']] || '待安排'),
     confDate: fmtDate_(r[COL['確認日期']]),
     confTime: isDate_(r[COL['確認時間']]) ? Utilities.formatDate(r[COL['確認時間']], TZ, 'HH:mm') : String(r[COL['確認時間']] || ''),
-    confCity: String(r[COL['確認城市']] || ''), eventId: String(r[COL.EventId] || '')
+    confCity: String(r[COL['確認城市']] || ''), eventId: String(r[COL.EventId] || ''),
+    hero: String(r[COL['最愛角色']] || ''), acts: String(r[COL['活動']] || ''), planText: String(r[COL['想去想做']] || ''), planLink: String(r[COL['連結']] || '')
   };
 }
 function allRows_() {
@@ -81,7 +86,8 @@ function missing_() {
 
 /* ---------- 第一次執行：建立分頁並授權 ---------- */
 function setup() {
-  sheet_(SHEET_REPLY, HEAD);
+  const rs = sheet_(SHEET_REPLY, HEAD);
+  rs.getRange(1, 1, 1, HEAD.length).setValues([HEAD]); // 補上新欄位的標題
   sheet_(SHEET_ROSTER, ['暱稱（把你要邀請的朋友一個一個填在這一欄）']);
   CalendarApp.getDefaultCalendar();
   Logger.log('完成。請繼續照 README 部署成網頁應用程式。');
@@ -101,14 +107,16 @@ function doPost(e) {
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json_({ ok: false, error: 'email' });
     const slots = (Array.isArray(d.slots) ? d.slots : []).slice(0, 40).map(x => ({
       city: String(x.city || '').slice(0, 20), d: String(x.d || '').slice(0, 10),
-      to: String(x.to || '').slice(0, 10), note: String(x.note || '').slice(0, 30)
+      to: String(x.to || '').slice(0, 10), note: String(x.note || '').slice(0, 30),
+      prop: x.prop ? 1 : 0, place: String(x.place || '').slice(0, 60)
     }));
     const id = Utilities.getUuid().slice(0, 8);
     const row = [
       id, new Date(), name, safe_(d.relation, 60), safe_(d.city, 40),
       safe_((d.dates || []).join ? d.dates.join('\n') : d.dates, 600), safe_(d.format, 60),
       safe_((d.invitees || []).join ? d.invitees.join('、') : d.invitees, 300), email, safe_(d.ig, 60),
-      safe_(d.role, 30), safe_(d.guess, 20), safe_(d.message, 2000), JSON.stringify(slots), '待安排', '', '', '', ''
+      safe_(d.role, 30), safe_(d.guess, 20), safe_(d.message, 2000), JSON.stringify(slots), '待安排', '', '', '', '',
+      safe_((d.acts || []).join ? d.acts.slice(0, 4).join('、') : '', 60), safe_(d.planText, 200), safeLink_(d.planLink), safe_(d.hero, 10)
     ];
     s.appendRow(row);
     SpreadsheetApp.flush();
@@ -128,8 +136,9 @@ function notify_(r) {
   const miss = missing_();
   const lines = [
     `${r.name} 剛剛填了見面邀請卡！`, '',
-    `關係：${r.relation}`, `城市：${r.city}`, `可約時段：\n${r.dates}`, `見面方式：${r.format}`,
-    r.invitees ? `想邀請：${r.invitees}` : '', `聯絡：${[r.email, r.ig && 'IG ' + r.ig].filter(Boolean).join(' / ') || '（沒留）'}`,
+    `關係：${r.relation}`, r.hero ? `最喜歡的小王子角色：${r.hero}` : '', `城市：${r.city}`, `可約時段：\n${r.dates}`, `見面方式：${r.format}`,
+    r.invitees ? `想邀請：${r.invitees}` : '',
+    (r.acts || r.planText) ? `想一起做：${[r.acts, r.planText].filter(Boolean).join('｜')}` : '', r.planLink ? `連結：${r.planLink}` : '', `聯絡：${[r.email, r.ig && 'IG ' + r.ig].filter(Boolean).join(' / ') || '（沒留）'}`,
     '', `目前已填 ${all.length} 人`,
     rosterNames_().length ? (miss.length ? `還沒填（${miss.length}）：${miss.join('、')}` : '名單上的人都填完了 🎉') : '（「名單」分頁還沒填，填了就能看到誰還沒填）',
     '', `到後台排時間：${adminUrl_()}`
@@ -194,10 +203,41 @@ function confirmBooking(key, id, o) {
   f.s.getRange(f.no, COL['狀態'] + 1, 1, 5).setValues([['已確認', o.date, o.start + '–' + o.end, ev.getId(), safe_(o.city, 40)]]);
   let mailed = false;
   if (o.sendMail && r.email) {
-    MailApp.sendEmail({ to: r.email, subject: safe_(o.subject, 100) || '我們確定見面囉！', body: String(o.body || '').slice(0, 3000) });
+    sendConfirm_(r, o, start, end, ev.getId());
     mailed = true;
   }
   return { ok: true, mailed: mailed, rows: allRows_() };
+}
+
+/* ---------- 確認信：附「加入 Google 日曆」按鈕與 .ics 附件 ---------- */
+function utc_(d) { return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+function htmlEsc_(t) { return String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function icsEsc_(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/([,;])/g, '\\$1'); }
+function gcalUrl_(title, start, end, place, detail) {
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(title) +
+    '&dates=' + utc_(start) + '/' + utc_(end) + '&location=' + encodeURIComponent(place || '') +
+    '&details=' + encodeURIComponent(detail || '');
+}
+function icsBlob_(uid, title, start, end, place, detail) {
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//meeting-invite//ZH', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT', 'UID:' + uid + '@meeting-invite', 'DTSTAMP:' + utc_(new Date()), 'DTSTART:' + utc_(start), 'DTEND:' + utc_(end),
+    'SUMMARY:' + icsEsc_(title), 'LOCATION:' + icsEsc_(place), 'DESCRIPTION:' + icsEsc_(detail), 'END:VEVENT', 'END:VCALENDAR'];
+  return Utilities.newBlob(lines.join('\r\n'), 'text/calendar', 'meeting.ics');
+}
+function sendConfirm_(r, o, start, end, uid) {
+  const title = '我們見面！';
+  const place = safe_(o.city, 40) || r.city;
+  const text = String(o.body || '').slice(0, 3000);
+  const link = gcalUrl_(title, start, end, place, text);
+  const html = '<div style="font-family:sans-serif;line-height:1.7;color:#3A2A18">' +
+    htmlEsc_(text).replace(/\n/g, '<br>') +
+    '<p style="margin:20px 0"><a href="' + htmlEsc_(link) + '" style="background:#3A2A18;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;display:inline-block">📅 加入我的 Google 行事曆</a></p>' +
+    '<p style="font-size:13px;color:#6B5638">用 Apple、Outlook 等其他行事曆的話，請開啟附件 meeting.ics。</p></div>';
+  MailApp.sendEmail({
+    to: r.email, subject: safe_(o.subject, 100) || '我們確定見面囉！',
+    body: text + '\n\n加入 Google 行事曆：' + link,
+    htmlBody: html, attachments: [icsBlob_(uid, title, start, end, place, text)]
+  });
 }
 
 function cancelBooking(key, id) {

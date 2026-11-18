@@ -59,20 +59,30 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const WD=['日','一','二','三','四','五','六'];
 function fmtDay(ds){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');if(!m)return ds||'';const d=new Date(+m[1],+m[2]-1,+m[3]);return `${+m[2]}/${+m[3]}（${WD[d.getDay()]}）`}
-function slotLabel(s){return `${s.city} ${fmtDay(s.d)}${s.to&&s.to!==s.d?'–'+fmtDay(s.to):''}${s.note?' '+s.note:''}`}
+function slotLabel(s){if(s.prop)return `提議：${fmtDay(s.d)}${s.note?' '+s.note:''}${s.place?'（'+s.place+'）':''}`;return `${s.city} ${fmtDay(s.d)}${s.to&&s.to!==s.d?'–'+fmtDay(s.to):''}${s.note?' '+s.note:''}`}
 function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display='none',5000)}
 function call(fn,...args){
   return new Promise((ok,bad)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>bad(new Error(e&&e.message||String(e))))[fn](KEY,...args));
 }
+function diag(t){const e=document.getElementById('sum');if(e)e.textContent=t}
+window.addEventListener('error',ev=>diag('頁面錯誤：'+(ev.message||'未知')+'（請把這行文字抄給 Claude）'));
+window.addEventListener('unhandledrejection',ev=>diag('頁面錯誤：'+((ev.reason&&ev.reason.message)||ev.reason)+'（請把這行文字抄給 Claude）'));
 async function load(){
-  try{const r=await call('adminData');D.rows=r.rows;D.roster=r.roster;D.missing=r.missing;render()}
-  catch(e){$('#sum').textContent='載入失敗：'+e.message}
+  diag('腳本已啟動，正在向試算表要資料…（'+(typeof google!=='undefined'&&google.script&&google.script.run?'連線元件正常':'找不到 google.script.run，請改用無痕視窗只登入你自己的帳號')+'）');
+  const wd=setTimeout(()=>diag('等了 15 秒伺服器還沒回應。請確認：1) 已用「新版本」重新部署 2) 瀏覽器只登入部署後台的那個 Google 帳號（可用無痕視窗） 3) 在 Apps Script 手動執行一次 adminData 看有沒有授權或錯誤訊息'),15000);
+  try{const r=await call('adminData');clearTimeout(wd);if(!r||!r.rows)throw new Error('伺服器回傳空白（可能是資料格式問題）');D.rows=r.rows;D.roster=r.roster;D.missing=r.missing;render()}
+  catch(e){clearTimeout(wd);$('#sum').textContent='載入失敗：'+e.message+'（請把這行文字抄給 Claude）'}
 }
 function render(){
   const total=D.rows.length,conf=D.rows.filter(r=>r.status==='已確認').length;
   $('#sum').textContent=`已收到 ${total} 份回覆，已確認 ${conf} 位，待安排 ${total-conf} 位`+(D.roster.length?`，名單上還沒填：${D.missing.length} 位`:'');
   document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#view').innerHTML=tab==='cal'?viewCal():tab==='rep'?viewRep():viewRoster();
+}
+function planHtml(r){
+  const t=[r.acts,r.planText].filter(Boolean).map(esc).join('｜');
+  const l=/^https?:\/\//i.test(r.planLink||'')?` <a href="${esc(r.planLink)}" target="_blank" rel="noopener">連結</a>`:'';
+  return (t||l)?`<div>🍽 想一起做：${t}${l}</div>`:'';
 }
 function contact(r){
   const p=[];
@@ -87,7 +97,7 @@ function viewCal(){
     <div class="small">${contact(r)}</div>
     <button class="btn sm" data-act="book" data-id="${esc(r.id)}">改時間</button> <button class="btn sm" data-act="cancel" data-id="${esc(r.id)}">取消</button></div>`).join(''):'<p class="small">還沒有。從下面點朋友的名字就能安排。</p>';
   const days={};
-  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.forEach(s=>{
+  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>!s.prop).forEach(s=>{
     const k=s.d+'|'+s.city+'|'+s.note;((days[s.d]=days[s.d]||{})[s.city+'|'+s.note]=(days[s.d][s.city+'|'+s.note]||{s:s,p:[]})).p.push(r)}));
   const ds=Object.keys(days).sort();
   h+=`<h2>還沒安排的人，各時段誰可以（點名字來安排）</h2>`;
@@ -97,6 +107,9 @@ function viewCal(){
     Object.values(days[d]).map(x=>`<div class="slot"><b>${esc(x.s.city)} ${esc(x.s.note)}</b>：`+
       x.p.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.city)}" data-note="${esc(x.s.note)}">${esc(r.name)}</button>`).join('')+`</div>`).join('')+`</div>`;
   }).join(''):'<p class="small">目前沒有待安排的時段。</p>';
+  const props=[];D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>s.prop).forEach(s=>props.push({r:r,s:s})));
+  props.sort((a,b)=>(a.s.d+a.s.note).localeCompare(b.s.d+b.s.note));
+  if(props.length)h+=`<h2>對方提議的時間（${props.length}）<span class="tag">反過來約你</span></h2>`+props.map(x=>`<div class="slot"><b>${esc(fmtDay(x.s.d))} ${esc(x.s.note)}</b>${x.s.place?`　${esc(x.s.place)}`:''}：<button class="chip" data-act="book" data-id="${esc(x.r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.place||x.r.city)}" data-note="${esc(x.s.note)}">${esc(x.r.name)}</button></div>`).join('');
   const none=D.rows.filter(r=>r.status!=='已確認'&&!r.slots.length);
   if(none.length)h+=`<h2>沒選到時段／時間都不行（${none.length}）</h2>`+none.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}">${esc(r.name)}</button>`).join('')+`<p class="small">這些人要你再跟他們約，點名字可手動指定日期。</p>`;
   return h;
@@ -106,7 +119,8 @@ function viewRep(){
   return D.rows.slice().reverse().map(r=>`<div class="card ${r.status==='已確認'?'done':''}">
     <b>${esc(r.name)}</b><span class="tag ${r.status==='已確認'?'ok':''}">${esc(r.status)}</span> <span class="small">${esc(r.time)}・${esc(r.relation)}</span>
     <div>${esc(r.city)}　${esc(r.format)}${r.invitees?`　想邀請：${esc(r.invitees)}`:''}</div>
-    <div class="small">角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
+    ${planHtml(r)}
+    <div class="small">最愛：${esc(r.hero||'—')}　角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
     <div><pre>${esc(r.dates)}</pre></div>
     <div>${contact(r)}</div>
     <button class="btn sm" data-act="book" data-id="${esc(r.id)}">${r.status==='已確認'?'改時間':'安排時間'}</button></div>`).join('');
@@ -122,18 +136,19 @@ function viewRoster(){
 const NOTE_T=n=>/早/.test(n)?['09:00','11:30']:/晚/.test(n)?['18:30','21:00']:/午/.test(n)?['12:00','14:00']:['12:00','14:00'];
 function openBook(id,pre){
   const r=D.rows.find(x=>x.id===id);if(!r)return;
-  const first=r.slots[0]||{};
+  const first=r.slots.find(x=>!x.prop)||r.slots[0]||{};
   const d=(pre&&pre.d)||r.confDate||first.d||'';
-  const city=(pre&&pre.city)||r.confCity||first.city||r.city;
+  const city=(pre&&pre.city)||r.confCity||(first.prop?(first.place||r.city):first.city)||r.city;
   const [s0,e0]=r.confTime?r.confTime.split('–'):NOTE_T((pre&&pre.note)||first.note||'');
   cur={r:r};
   $('#box').innerHTML=`<h2 style="margin-top:0">安排：${esc(r.name)}</h2>
   <div class="small">${contact(r)}</div>
+  ${planHtml(r)}
   ${r.slots.length?`<p class="small">他可以的時段：${r.slots.map(s=>esc(slotLabel(s))).join('、')}</p>`:'<p class="small">他沒有選時段，請自己指定日期。</p>'}
   <label>日期</label><input type="date" id="bd" value="${esc(d)}">
   <div class="row"><div><label>開始</label><input type="time" id="bs" value="${esc(s0)}"></div><div><label>結束</label><input type="time" id="be" value="${esc(e0)}"></div></div>
   <label>地點／城市</label><input id="bc" value="${esc(city)}">
-  ${r.email?`<label><input type="checkbox" id="bm" checked> 同時寄確認信給 ${esc(r.email)}</label>
+  ${r.email?`<label><input type="checkbox" id="bm" checked> 同時寄確認信給 ${esc(r.email)}（信裡會附「加入 Google 行事曆」按鈕）</label>
   <label>信件主旨</label><input id="bsub" value="我們確定見面囉！">
   <label>信件內容</label><textarea id="bbody" rows="7"></textarea>`:
   `<p class="small">他沒留 Email。確認後下面會給你一段文字，可以複製後用 IG 傳給他。</p>`}

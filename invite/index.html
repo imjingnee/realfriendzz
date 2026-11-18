@@ -54,6 +54,26 @@ p{margin:.5em 0}
 .opt:disabled{cursor:default}
 .opt.right{border-color:var(--ok);background:#DCEBC9}
 .opt.wrong{border-color:var(--no);background:#F2D3C6}
+.heroes{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.hero{font:inherit;color:var(--ink);background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:8px 4px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 3px 0 var(--shade)}
+.hero .hp{display:block;width:48px;height:84px}.hero .hp svg{width:100%;height:100%;image-rendering:pixelated}
+.hero.on{border-color:var(--ink);background:#F3E2B8;transform:translateY(2px);box-shadow:0 1px 0 var(--shade)}
+.cal{background:var(--panel);border:2px solid var(--edge);border-radius:10px;padding:10px;margin:10px 0}
+.calh{display:flex;align-items:center;justify-content:space-between;font-weight:700;margin-bottom:6px}
+.calh button{font:inherit;font-size:1.2rem;line-height:1;background:var(--paper);border:2px solid var(--edge);border-radius:8px;width:44px;height:40px;cursor:pointer;color:var(--ink)}
+.calh button:disabled{opacity:.3;cursor:default}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calg .wd{font-size:.78rem;color:var(--sub);padding:2px 0}
+.calg .d{min-height:44px;border:2px solid transparent;border-radius:8px;background:transparent;font:inherit;color:#9a8460;opacity:.45}
+.calg .d.av{background:var(--paper);border-color:var(--line);color:var(--ink);opacity:1;font-weight:700;cursor:pointer}
+.calg .d.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+.calg .d.open{outline:3px solid var(--accent);outline-offset:1px}
+.calg .d.adj{background:transparent;border:2px dashed var(--accent);color:var(--accent);opacity:1;font-weight:700}
+.calg .d:not([disabled]):not(.av):not(.adj){opacity:.8;cursor:pointer}
+.opt.adjbtn{border-style:dashed}
+.lg{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px}
+.lg.av{background:var(--paper);border:2px solid var(--line)}.lg.adj{border:2px dashed var(--accent)}
+.pick{margin:12px 0}.pick .grp{margin-top:8px}
 .btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:1.02rem;
   background:var(--gold);color:var(--gold-ink);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;margin-top:18px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
@@ -93,6 +113,9 @@ textarea{resize:vertical;line-height:1.6}
 #scene svg{width:100%;height:100%;shape-rendering:crispEdges;display:block}
 #scene .walker svg{animation:bob .5s steps(1) infinite}
 #scene .walker.idle svg{animation:none}
+#scene .walker[data-k=rose] svg{animation:hop .5s steps(1) infinite}
+#scene .walker[data-k=rose].idle svg{animation:none}
+@keyframes hop{0%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes bob{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 #scene .legA{animation:legA .5s steps(1) infinite}
 #scene .legB{animation:legB .5s steps(1) infinite}
@@ -148,6 +171,8 @@ const CONFIG={
 };
 
 const REL=['很久沒見的朋友','還沒見過面的朋友','常常見面的朋友','其他'];
+const ACTS=['吃飯','逛逛／玩','算塔羅','其他'];
+const ACT_ICON=['🍽️','🎡','🔮','✨'];
 const FORMAT=['一對一見面','小聚（我們幾個朋友一起）','都可以'];
 const FOOD=['葷素都吃','偏素或吃素','有忌口或過敏（請在下方備註）','不吃辣','愛吃辣','愛甜點'];
 const VIBE=['安靜好聊天','熱鬧有氣氛','邊吃邊玩點小遊戲','都可以'];
@@ -366,9 +391,9 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 })();
 
 /* ===== 狀態 ===== */
-const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
-const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const STEPS=['intro','who','g0','g1','g2','g3','city','dates','plan','format','food','vibe','arrive','topic','result'];
+const CARD_N=8;
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -391,23 +416,46 @@ const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.gu
 const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
-function slotsData(){
-  const out=[];
-  A.dates.forEach(k=>{const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;const t=CONFIG.trips[+m[1]];if(!t)return;const w=t.when[+m[2]];if(!w)return;
-    out.push({city:t.city,d:w.d,to:w.to||'',note:w.note||''})});
+const normLink=v=>{v=(v||'').trim();return v&&!/^https?:\/\//i.test(v)?'https://'+v:v};
+const linkOK=v=>{v=normLink(v);return !v||(/^https?:\/\/[^\s]+\.[^\s]+$/i.test(v)&&v.length<=300)};
+const planLabel=()=>{const h=n=>A.acts.some(i=>ACTS[i]===n);
+  return h('吃飯')?'想吃什麼、想去哪間餐廳或哪個地方？':h('逛逛／玩')?'想去哪裡、想玩什麼？':h('算塔羅')?'想算什麼、想問什麼？':'你想做什麼、想去哪裡？'};
+const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+const PERIODS=['早上','中午','晚上'];
+const pad2=n=>String(n).padStart(2,'0');
+const ymd=ds=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');return m?[+m[1],+m[2]-1,+m[3]]:null};
+function periodsOf(note){const n=String(note||''),o=[];if(/早/.test(n))o.push('早上');if(/午/.test(n))o.push('中午');if(/晚/.test(n))o.push('晚上');return o.length?o:PERIODS.slice()}
+function eachDay(w){
+  const a=ymd(w.d);if(!a)return[];const b=ymd(w.to)||a,out=[];
+  for(let k=0;k<62;k++){const d=new Date(a[0],a[1],a[2]+k);if(d>new Date(b[0],b[1],b[2]))break;out.push(`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`)}
   return out;
 }
-const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
-function dateLabels(){
-  const out=[],byCity={},extra=[];
-  A.dates.forEach(k=>{
-    if(k==='none'){extra.push('這些時間都不行，我再告訴你');return}
-    const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;
-    const ci=+m[1],t=CONFIG.trips[ci];if(!t)return;const w=t.when[+m[2]];if(!w)return;
-    (byCity[ci]=byCity[ci]||[]).push([+m[2],fmtWhen(w)]);
+function dayMap(ci){
+  const m={};(CONFIG.trips[ci].when||[]).forEach(w=>{const ps=periodsOf(w.note);eachDay(w).forEach(d=>{(m[d]=m[d]||new Set());ps.forEach(p=>m[d].add(p))})});
+  const o={};Object.keys(m).forEach(d=>o[d]=PERIODS.filter(p=>m[d].has(p)));return o;
+}
+function pickedSlots(){
+  const out=[];A.dates.forEach(k=>{const m=/^(\d+)\|(\d{4}-\d{2}-\d{2})\|(.+)$/.exec(k);if(m&&CONFIG.trips[+m[1]])out.push({ci:+m[1],d:m[2],p:m[3]})});
+  return out;
+}
+function slotsData(){
+  const a=pickedSlots().map(x=>({city:CONFIG.trips[x.ci].city,d:x.d,to:'',note:x.p}));
+  A.proposals.forEach(q=>q.periods.forEach(p=>a.push({city:q.place||'（對方提議）',d:q.d,to:'',note:p,prop:true,place:q.place})));
+  return a;
+}
+function pickedText(){
+  const by={};pickedSlots().forEach(x=>{((by[x.ci]=by[x.ci]||{})[x.d]=(by[x.ci][x.d]||[])).push(x.p)});
+  return CONFIG.trips.map((t,ci)=>by[ci]?`${t.city} `+Object.keys(by[ci]).sort().map(d=>`${fmtDay(d)} ${PERIODS.filter(p=>by[ci][d].includes(p)).join('、')}`).join('；'):null).filter(Boolean);
+}
+function dateLabels(ui){
+  const out=pickedText();
+  A.proposals.forEach(q=>{
+    const pl=q.place?q.place+' ':'';
+    if(q.cal)out.push(ui?`${pl}${fmtDay(q.d)} ${q.periods.join('、')}（這天我原本沒排，我會想辦法）`:`我可以（這天不在你的行程，請你看看能不能調整）：${pl}${fmtDay(q.d)} ${q.periods.join('、')}`);
+    else out.push(ui?`${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（你提議約在${q.place}）`:'（你提議的時間）'}`:`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`);
   });
-  CONFIG.trips.forEach((t,ci)=>{if(byCity[ci])out.push(`${t.city} ${byCity[ci].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('、')}`)});
-  return out.concat(extra);
+  if(A.dates.includes('none'))out.push('這些時間都不行，我再告訴你');
+  return out;
 }
 
 function role(){
@@ -440,9 +488,13 @@ function msg(){
   const pick=(arr,idx)=>idx.map(i=>arr[i]).join('、');
   return [
     `【${CONFIG.title}】`,
+    ...(A.hero?[`最喜歡的《小王子》角色：${HEROES.find(h=>h.k===A.hero).n}`]:[]),
     `我是：${A.name.trim()||'（沒留暱稱）'}（${A.rel===REL.length-1&&A.relOther.trim()?`其他：${A.relOther.trim()}`:REL[A.rel]}）`,
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
+    ...((A.acts.length||A.actText.trim()||A.actLink.trim())?[`想一起做：${A.acts.map(i=>ACTS[i]).join('、')||'（沒選）'}`]:[]),
+    ...(A.actText.trim()?[`想去／想做：${A.actText.trim()}`]:[]),
+    ...(A.actLink.trim()?[`連結：${normLink(A.actLink)}`]:[]),
     `見面方式：${FORMAT[A.format]}`,
     ...((A.email.trim()||A.ig.trim())?[`聯絡：${[A.email.trim(),A.ig.trim()&&'IG '+A.ig.trim()].filter(Boolean).join('／')}`]:[]),
     ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
@@ -468,9 +520,11 @@ function inviteBox(){
     ${A.invitees.length?`<div class="chips">${A.invitees.map((n,i)=>`<span class="chip">${esc(n)} <button type="button" data-a="delinv" data-v="${i}" aria-label="移除 ${esc(n)}" style="border:0;background:none;font:inherit;cursor:pointer">✕</button></span>`).join('')}</div>`:''}</div>`;
 }
 function canNext(id){
+  if(id==='intro')return !!A.hero;
   if(id==='who')return A.name.trim().length>0&&A.rel>=0;
   if(id==='city')return A.city>=0;
-  if(id==='dates')return A.dates.length>0;
+  if(id==='dates')return A.dates.length>0||A.proposals.length>0;
+  if(id==='plan')return linkOK(A.actLink);
   if(id==='format')return A.format>=0;
   if(id==='vibe')return A.vibe>=0;
   if(id==='arrive')return A.arrive>=0;
@@ -480,12 +534,59 @@ function canNext(id){
 function dateBtn(k,text){
   return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}">${esc(text)}</button>`;
 }
+function calView(home,showAll){
+  const cis=showAll?CONFIG.trips.map((_,i)=>i):[home];
+  const all={};cis.forEach(ci=>{const m=dayMap(ci);Object.keys(m).forEach(d=>(all[d]=all[d]||[]).push(ci))});
+  const days=Object.keys(all).sort();if(!days.length)return '<p class="sub">這個城市目前沒有排日期，請用下面的「提議別的時間」告訴我你方便的日子，我再跟你約。</p>';
+  const t0=new Date(),todayS=`${t0.getFullYear()}-${pad2(t0.getMonth()+1)}-${pad2(t0.getDate())}`;
+  const months=[];{let [fy,fm]=days[0].slice(0,7).split('-').map(Number);const [ly,lm]=days[days.length-1].slice(0,7).split('-').map(Number);
+    for(let k=0;k<12;k++){months.push(`${fy}-${pad2(fm)}`);if(fy===ly&&fm===lm+2)break;fm++;if(fm>12){fm=1;fy++}}}
+  if(!months.includes(A.calMonth))A.calMonth=months[0];
+  const mi=months.indexOf(A.calMonth),[y,mo]=A.calMonth.split('-').map(Number);
+  const first=new Date(y,mo-1,1).getDay(),count=new Date(y,mo,0).getDate();
+  const picked=pickedSlots();
+  let g=['日','一','二','三','四','五','六'].map(w=>`<div class="wd">${w}</div>`).join('')+'<div></div>'.repeat(first);
+  for(let d=1;d<=count;d++){
+    const ds=`${y}-${pad2(mo)}-${pad2(d)}`,av=!!all[ds],sel=picked.some(x=>x.d===ds),adj=A.proposals.some(x=>x.d===ds),past=ds<todayS;
+    g+=`<button type="button" class="d ${av?'av':''} ${sel?'sel':''} ${adj&&!sel?'adj':''} ${A.dayOpen===ds?'open':''}" ${past?'disabled':`data-a="day" data-d="${ds}"`} aria-label="${mo}月${d}日${av?'':'（沒有安排，可請對方調整）'}${sel||adj?'（已選）':''}">${d}</button>`;
+  }
+  let h=`<div class="cal"><div class="calh"><button type="button" data-a="calnav" data-m="${months[mi-1]||''}" ${mi>0?'':'disabled'} aria-label="上個月">‹</button><span>${y} 年 ${mo} 月</span><button type="button" data-a="calnav" data-m="${months[mi+1]||''}" ${mi<months.length-1?'':'disabled'} aria-label="下個月">›</button></div><div class="calg">${g}</div></div>`;
+  h+=`<p class="small"><span class="lg av"></span> 我有排的日子　<span class="lg adj"></span> 我原本沒排的日子（你只有這天方便的話，也可以點）</p>`;
+  if(A.dayOpen){
+    const d=A.dayOpen,offered=all[d]||[],q=A.proposals.find(x=>x.cal&&x.d===d),mine=q?q.periods:[];
+    const offeredPs=new Set();offered.forEach(ci=>dayMap(ci)[d].forEach(pp=>offeredPs.add(pp)));
+    const rest=PERIODS.filter(pp=>!offeredPs.has(pp));
+    h+=`<div class="pick"><b>${esc(fmtDay(d))}　你想約哪個時段？</b>`+offered.map(ci=>{
+      const ps=dayMap(ci)[d];
+      return `${cis.length>1?`<div class="grp">${esc(CONFIG.trips[ci].city)}</div>`:''}<div class="btnrow">${ps.map(pp=>{const k=`${ci}|${d}|${pp}`;return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}" style="flex:1 1 90px;text-align:center">${pp}</button>`}).join('')}</div>`}).join('')+
+    (rest.length?`<div class="grp">${offered.length?'這些時段我原本沒排':'這天我原本沒排'}</div><p class="small">如果你只有這個時段方便，點下面告訴我，我會想辦法調整。</p><div class="btnrow">${rest.map(pp=>`<button type="button" class="opt adjbtn ${mine.includes(pp)?'on':''}" data-a="adj" data-d="${d}" data-p="${pp}" style="flex:1 1 90px;text-align:center">${pp}</button>`).join('')}</div>`:'')+`</div>`;
+  }else h+=`<p class="small">先點一個日子。</p>`;
+  const txt=dateLabels(true).filter(t=>!/^這些時間都不行|^都不行/.test(t));
+  if(txt.length)h+=`<div class="reveal"><b>你選了：</b><br>${txt.map(esc).join('<br>')}</div>`;
+  return h;
+}
+function propView(){
+  const own=A.proposals.map((q,i)=>[q,i]).filter(x=>!x[0].cal);
+  const list=own.length?`<div class="reveal"><b>你的提議：</b><br>${own.map(([q,i])=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
+  if(!A.propOpen)return `<p class="sub">日曆上沒有適合的時間？換你來約我！告訴我你方便的日子，我會盡量配合。</p><button type="button" class="opt" data-a="propopen">＋ 提議別的時間</button>${list}`;
+  const today=new Date(),min=`${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
+  return `<div class="cal"><b>你想約…</b>
+    <label class="f" for="pd">哪一天？</label><input id="pd" type="date" min="${min}" value="${esc(A.pd)}" data-i="pd">
+    <label class="f">什麼時段？（可多選）</label>
+    <div class="btnrow">${PERIODS.map(p=>`<button type="button" class="opt ${A.pp.includes(p)?'on':''}" data-a="pper" data-p="${p}" style="flex:1 1 90px;text-align:center">${p}</button>`).join('')}</div>
+    <label class="f" for="pl">城市或地點（選填）</label><input id="pl" type="text" maxlength="40" placeholder="例如：吉隆坡、你想去的咖啡廳" value="${esc(A.pplace)}" data-i="pplace">
+    ${A.proposals.filter(x=>!x.cal).length>=3?'<p class="small">最多提議 3 個。</p>':`<p><button type="button" class="btn" data-a="propadd" ${A.pd&&A.pp.length?'':'disabled'} style="margin-top:12px">加入這個提議</button></p>`}
+    <button type="button" class="link" data-a="propopen">收起</button></div>${list}`;
+}
 function view(id){
   if(id==='intro')return `
     <h1>我們來見面吧！</h1>
     <p>${esc(CONFIG.intro)}</p>
+    <h2 style="margin-top:18px">歡迎來跟我約飯！</h2>
+    <p class="sub">先選一位陪你走完這段路的角色：你最喜歡《小王子》裡的哪個角色？</p>
+    <div class="heroes">${HEROES.map((h,i)=>`<button type="button" class="hero ${A.hero===h.k?'on':''}" data-a="hero" data-k="${h.k}" aria-pressed="${A.hero===h.k}"><span class="hp">${walkerSvg(h.k)}</span><b>${i+1}　${h.n}</b></button>`).join('')}</div>
     <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
-    <button class="btn" data-a="next">開始</button>`;
+    <button class="btn" data-a="next" ${canNext('intro')?'':'disabled'}>開始</button>`;
   if(id==='who')return `
     <h2>嗨嗨請問尼是誰～～</h2>
     <label class="f" for="nm">我通常叫你什麼？</label>
@@ -513,27 +614,32 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
-    CONFIG.trips.forEach((t,ci)=>{
-      if(!(showAll||ci===home))return;
-      html+=`<div class="grp">${esc(t.city)}</div><div class="stack">${t.when.map((w,wi)=>dateBtn(`c${ci}d${wi}`,fmtWhen(w))).join('')}</div>`;
-    });
-    if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他時間</button>`;
-    html+=`<div class="grp">其他</div><div class="stack">${dateBtn('none','這些時間都不行，我再告訴你')}</div>
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，選你方便的時段，可以選很多天。灰色的日子是我原本沒排的，但如果你只有那天方便，也可以點，我會看看能不能調整。</p>`;
+    html+=calView(home,showAll);
+    if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他日子</button>`;
+    html+=`<div class="grp">沒有適合的時間？</div>${propView()}<div class="stack" style="margin-top:10px">${dateBtn('none','這些時間都不行，之後再說')}</div>
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
   }
-  if(id==='format')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}${inviteBox()}
+  if(id==='plan')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你想跟我一起做什麼？</h2><p class="sub">選填，沒有想法也可以直接按下一步，交給我安排。</p>
+    ${opts(ACTS.map((t,i)=>ACT_ICON[i]+' '+t),A.acts,'act')}
+    ${A.acts.length?`<label class="f" for="at">${esc(planLabel())}（選填）</label>
+    <input id="at" type="text" maxlength="80" placeholder="例如：想吃某某餐廳、想去夜市、想算感情運" value="${esc(A.actText)}" data-i="actText">
+    <label class="f" for="al">貼上相關資訊連結（選填）</label>
+    <input id="al" type="url" inputmode="url" maxlength="300" placeholder="例如 Google 地圖、IG、網站" value="${esc(A.actLink)}" data-i="actLink">
+    <p class="small" id="alh" role="status">${linkOK(A.actLink)?'':'連結格式好像不太對，請檢查一下，或清空不填。'}</p>`:''}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='food')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
+  if(id==='format')return `<p class="small">見面卡 4 / ${CARD_N}</p><h2>你比較想怎麼見面？</h2>${opts(FORMAT,A.format,'format')}${inviteBox()}
+    <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
+  if(id==='food')return `<p class="small">見面卡 5 / ${CARD_N}</p><h2>吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
     <label class="f" for="fn">忌口或過敏備註（選填）</label>
     <input id="fn" type="text" maxlength="40" placeholder="例如：不吃牛、花生過敏" value="${esc(A.foodNote)}" data-i="foodNote">
     <button class="btn" data-a="next">下一步</button>`;
-  if(id==='vibe')return `<p class="small">見面卡 5 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
+  if(id==='vibe')return `<p class="small">見面卡 6 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='arrive')return `<p class="small">見面卡 6 / ${CARD_N}</p><h2>久違見面，或第一次見面，你通常會？</h2>${opts(ARR,A.arrive,'arrive')}
+  if(id==='arrive')return `<p class="small">見面卡 7 / ${CARD_N}</p><h2>久違見面，或第一次見面，你通常會？</h2>${opts(ARR,A.arrive,'arrive')}
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
-  if(id==='topic')return `<p class="small">見面卡 7 / ${CARD_N}</p><h2>你最想聊什麼？</h2><p class="sub">最多選 3 個，也可以略過。</p>${opts(TOPIC,A.topic,'topic')}
+  if(id==='topic')return `<p class="small">見面卡 8 / ${CARD_N}</p><h2>你最想聊什麼？</h2><p class="sub">最多選 3 個，也可以略過。</p>${opts(TOPIC,A.topic,'topic')}
     <button class="btn" data-a="next">看我的見面卡</button>`;
   if(id==='result'){
     const r=role(),m=msg();
@@ -542,7 +648,7 @@ function view(id){
     <div class="card">
       <div class="em">${r.svg}</div>
       <p class="small">你是我的故事裡的…</p><div class="rn">${esc(A.name.trim()||'未留暱稱')}　${r.n}</div>
-      <div class="tg">${r.crown}・${r.tag}赴約者</div>
+      <div class="tg">${r.tag}赴約者</div>
       <p class="ln">${esc(r.line)}</p>
       <dl class="kv">
         <dt>城市</dt><dd>${esc(cityName())}</dd>
@@ -574,13 +680,28 @@ function view(id){
 /* ===== 進度小動畫（原創像素圖，不使用任何現成遊戲的素材） ===== */
 function pxRect(x,y,w,h,f,cls){return '<rect'+(cls?' class="'+cls+'"':'')+' x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"/>'}
 function pxSprite(rows,pal,ox,oy){let o='';for(let y=0;y<rows.length;y++)for(let x=0;x<rows[y].length;x++){const c=rows[y][x];if(c==='.'||!pal[c])continue;o+=pxRect(x+(ox||0),y+(oy||0),1,1,pal[c])}return o}
-function walkerSvg(){
-  const P={Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'};
-  const body=["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."];
-  const legs=["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
-  const A=["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
+const HEROES=[{k:'prince',n:'小王子'},{k:'fox',n:'狐狸'},{k:'rose',n:'玫瑰'}];
+const WALKERS={
+  prince:{pal:{Y:'#F2C94C',y:'#C9A227',R:'#C9503A',H:'#E8B84A',h:'#C9962F',S:'#F0C9A0',E:'#3A2A1A',C:'#4F8A8B',c:'#3C6A6B',F:'#E8B84A',P:'#3B4A6B',B:'#3A2A1A'},
+    body:["..Y....YY....Y..","..YY..YYYY..YY..","..YYYYYRRYYYYY..","..yyyyyyyyyyyy..","...HHHHHHHHHH...","..HHHHHHHHHHHH..","..HHSSSSSSSSHH..","..HSSSSSSSSSSH..","..HSSESSSSESSH..","..hSSESSSSESSh..","..hSSSSSSSSSSh..","...hSSSSSSSSh...","....FFFFFFFF....","...FFFFFFFFFFFF.","..CCCFFFCCCC.FF.","..CCCCCCCCCCCC..","..CCcCCCCCCcCC..","..CCCCCCCCCCCC..","..SSCCCCCCCCSS..","...cCCCCCCCCc..."]},
+  fox:{pal:{O:'#E0862B',o:'#B8651A',T:'#D17A22',W:'#F6EBD2',K:'#3A2A1A',N:'#6B3F1A',P:'#C9751F',B:'#F6EBD2'},
+    body:["..oO........Oo..","..OOo......oOO..","..OOOOooooOOOO..","..OOOOOOOOOOOO..","..OOOOOOOOOOOO..","..OOKOOOOOOKOO..","..OOKOOOOOOKOO..","..OWWOOOOOOWWO..","...WWWWOOWWWW...","....WWWNNWWW....","....WWWWWWWW....","....OOWWWWOO....","...OOOWWWWOOO...","...OOOWWWWOOO...","..OOOOWWWWOOOO..","..OOOOOWWOOOOOT.","..OOOOOOOOOOOTTT","..OOoOOOOOOOTTTT","..OOOOOOOOOOTTTT","...OOOOOOOOO.TTW"],
+    legs:["....PPPPPPPP.TTW","....PPPPPPPP.TWW","....PPP..PPP..W.","....PPP..PPP....","....PPP..PPP...."]},
+  rose:{pal:{R:'#D6384B',r:'#A3202F',p:'#F27B8A',h:'#FFC2CB',E:'#3A2A1A',c:'#FF8FA0',m:'#7A1420',G:'#4F8A3A',g:'#34692A',L:'#7FB069',l:'#4D7A3A',B:'#2F4F24'},
+    body:[".....rrrrrr.....", "...rrRRRRRRrr...", "..rRRRRRRRRRRr..", ".rRRhhRRRRRRRRr.", ".rRhRRRRRRRRRRr.", ".rRRRRRRRRRRRRr.", ".rRRRERRRRERRRr.", ".rRRRERRRRERRRr.", ".rRccRRRRRRccRr.", ".rRRRRRmmRRRRRr.", "..rRRRRRRRRRRr..", "...rrRRRRRRrr...", ".....rrrrrr.....", "......gGGg......", ".LLL..gGGg..LLL.", ".lLLL.GGGG.LLLl.", "..lL...GG...Ll..", ".......GG.......", ".......GG.......", ".......GG......."],
+    legs:[".......GG.......",".......GG.......",".......GG.......",".......GG.......",".......GG......."],
+    A:["......GGG.......","......BBBB......","......BBBB......"],hop:1}
+};
+function walkerSvg(kind){
+  const W=WALKERS[kind]||WALKERS.prince,P=W.pal,body=W.body;
+  const legs=W.legs||["....PPPPPPPP....","....PPPPPPPP....","....PPP..PPP....","....PPP..PPP....","....PPP..PPP...."];
+  const A=W.A||["....PPP..PP.....","...BBBB..BBB....","...BBBB........."];
   const B=A.map(r=>r.split('').reverse().join(''));
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
+}
+function syncHero(){
+  const w=document.getElementById('walker');if(!w)return;
+  const k=A.hero||'prince';if(w.dataset.k!==k){w.innerHTML=walkerSvg(k);w.dataset.k=k}
 }
 function planetSvg(){
   let o='';
@@ -592,17 +713,18 @@ function planetSvg(){
 let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
   const el=document.getElementById('scene');if(!el)return;
-  const B=STEPS.length-1;
-  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
+  const N=STEPS.length+1; // 每一步一格，最後一格是石像的
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg(A.hero||'prince')+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(N)+'</div>';
   sceneReady=true;
   window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
 }
 function updateScene(silent){
   if(!sceneReady)return;
   const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
-  const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
-  for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-70)*Math.min(step,B)/B)+'px';
+  const bs=document.getElementById('blocks').children,B=STEPS.length-1,N=bs.length,tw=el.clientWidth;
+  for(let i=0;i<N;i++){const on=i<=step||(i===N-1&&step>=B);let c='b '+(on?'done':'todo');if(!silent&&i===step&&step>scenePrev)c+=' pop';bs[i].className=c}
+  // 旅人站在第 step 格的正中央；最後一格留給石像
+  w.style.left=(((Math.min(step,B)+0.5)/N)*tw-20)+'px';
   w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
   sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
@@ -614,7 +736,7 @@ function render(keepScroll){
   const pct=Math.round(step/(STEPS.length-1)*100);
   const top=step>0?`<div class="top"><button type="button" class="back" data-a="prev" aria-label="上一步">← 上一步</button></div>`:'';
   document.getElementById('app').innerHTML=top+view(id);
-  updateScene();
+  syncHero();updateScene();
   window.scrollTo(0,keepScroll?y:0);
 }
 function toggle(arr,v,max){const i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else if(!max||arr.length<max)arr.push(v)}
@@ -627,10 +749,25 @@ document.addEventListener('click',async e=>{
     case 'prev':step=Math.max(0,step-1);render(false);break;
     case 'rel':A.rel=v;render(true);break;
     case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
-    case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false}render(true);break;
-    case 'showall':A.showAll=true;render(true);break;
+    case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false;A.calMonth='';A.dayOpen=''}render(true);break;
+    case 'adj':{
+      const d=b.dataset.d,pp=b.dataset.p;let q=A.proposals.find(x=>x.cal&&x.d===d);
+      if(!q){q={d,periods:[],place:(A.city>=0&&A.city<CONFIG.trips.length)?CONFIG.trips[A.city].city:'',cal:true};A.proposals.push(q)}
+      const i=q.periods.indexOf(pp);if(i>=0)q.periods.splice(i,1);else q.periods.push(pp);
+      q.periods=PERIODS.filter(x=>q.periods.includes(x));
+      if(!q.periods.length)A.proposals.splice(A.proposals.indexOf(q),1);
+      render(true);break}
+    case 'propopen':A.propOpen=!A.propOpen;render(true);break;
+    case 'pper':{const p=b.dataset.p;const i=A.pp.indexOf(p);if(i>=0)A.pp.splice(i,1);else A.pp.push(p);render(true);break}
+    case 'propadd':if(A.pd&&A.pp.length&&A.proposals.filter(x=>!x.cal).length<3){A.proposals.push({d:A.pd,periods:PERIODS.filter(p=>A.pp.includes(p)),place:A.pplace.trim().slice(0,40)});A.pd='';A.pp=[];A.pplace='';A.propOpen=false}render(true);break;
+    case 'propdel':A.proposals.splice(v,1);render(true);break;
+    case 'day':A.dayOpen=A.dayOpen===b.dataset.d?'':b.dataset.d;render(true);break;
+    case 'calnav':if(b.dataset.m){A.calMonth=b.dataset.m;A.dayOpen=''}render(true);break;
+    case 'showall':A.showAll=true;A.calMonth='';render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
+    case 'hero':A.hero=b.dataset.k;render(true);break;
     case 'format':A.format=v;render(true);break;
+    case 'act':toggle(A.acts,v,0);render(true);break;
     case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
     case 'delinv':A.invitees.splice(v,1);render(true);break;
     case 'food':toggle(A.food,v,0);render(true);break;
@@ -651,7 +788,7 @@ document.addEventListener('click',async e=>{
       A.sending=true;A.hint='';render(true);
       const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
       const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
-        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,message:msg()};
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,hero:(HEROES.find(h=>h.k===A.hero)||{}).n||'',acts:A.acts.map(i=>ACTS[i]),planText:A.actText.trim(),planLink:normLink(A.actLink),message:msg()};
       const jobs=[];
       if(CONFIG.sheetUrl)jobs.push((async()=>{
         const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
@@ -681,6 +818,8 @@ document.addEventListener('click',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
+  if(k==='actLink'){A.actLink=e.target.value;const nb=document.querySelector('.btn[data-a=next]'),h=document.getElementById('alh');if(nb)nb.disabled=!linkOK(A.actLink);if(h)h.textContent=linkOK(A.actLink)?'':'連結格式好像不太對，請檢查一下，或清空不填。';return}
+  if(k==='pd'||k==='pplace'){A[k]=e.target.value;const ab=document.querySelector('[data-a=propadd]');if(ab)ab.disabled=!(A.pd&&A.pp.length);return}
   if(k){A[k]=e.target.value;if(k==='email'||k==='ig'){const o=document.getElementById('out');if(o)o.value=msg()}if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
 });
 initScene();
