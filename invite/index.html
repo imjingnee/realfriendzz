@@ -73,7 +73,6 @@ textarea{resize:vertical;line-height:1.6}
 .card .ln{margin:10px 0 0;font-size:1rem}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;text-align:left;margin-top:16px;padding-top:14px;border-top:2px dashed var(--line);font-size:.9rem}
 .kv dt{color:var(--sub)}.kv dd{margin:0}
-.banner{background:#F3DFA6;border:2px solid #B8962E;color:#6B5110;border-radius:8px;padding:10px 12px;font-size:.84rem;margin:0 0 14px}
 .note{font-size:.84rem;color:var(--sub);border-top:2px solid var(--line);margin-top:22px;padding-top:12px}
 .grp{font-family:var(--serif);font-size:1.02rem;color:var(--accent);margin:20px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}
@@ -101,7 +100,7 @@ textarea{resize:vertical;line-height:1.6}
 #scene .walker.idle .legB{animation:none;opacity:0}
 @keyframes legA{0%{opacity:1}50%{opacity:0}}
 @keyframes legB{0%{opacity:0}50%{opacity:1}}
-#scene .planet{position:absolute;right:0;bottom:var(--bh);width:56px;height:52px}
+#scene .planet{position:absolute;right:0;bottom:var(--bh);width:56px;height:32px}
 #scene .planet svg{animation:sway 2s steps(2) infinite}
 @keyframes sway{0%{transform:translateY(0)}50%{transform:translateY(-2px)}}
 #scene .eye{display:none}
@@ -122,7 +121,8 @@ textarea{resize:vertical;line-height:1.6}
 /* ===== 主辦人設定：只需要改這一區 ===== */
 const CONFIG={
   title:'見面邀請',
-  confirmed:false,   // ★ 換成真實資料後改 true，頁面上的「預覽版」橫幅就會消失
+  /* 後台（Google Apps Script 網頁應用程式）的網址，部署後貼在這裡，見 backend/README.md。留空就只送 Firebase */
+  sheetUrl:'',
   igUser:'imjingnee',         // ★ 你的 IG 帳號（不含 @），填了結果頁才會有「複製並開 IG 私訊」按鈕
   /* Firebase 網頁設定（公開用途，保護資料靠 Firestore 安全規則）。填了才會出現「直接傳給我」按鈕 */
   firebase:{apiKey:"AIzaSyDTdfkDYqruftnP8PSI0fZMyevxMuauBuo",authDomain:"realfriendzz.firebaseapp.com",projectId:"realfriendzz",storageBucket:"realfriendzz.firebasestorage.app",messagingSenderId:"891568132632",appId:"1:891568132632:web:caea74823784a38bd0e96d"},
@@ -368,7 +368,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -391,6 +391,13 @@ const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.gu
 const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
+function slotsData(){
+  const out=[];
+  A.dates.forEach(k=>{const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;const t=CONFIG.trips[+m[1]];if(!t)return;const w=t.when[+m[2]];if(!w)return;
+    out.push({city:t.city,d:w.d,to:w.to||'',note:w.note||''})});
+  return out;
+}
+const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 function dateLabels(){
   const out=[],byCity={},extra=[];
   A.dates.forEach(k=>{
@@ -437,6 +444,7 @@ function msg(){
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
     `見面方式：${FORMAT[A.format]}`,
+    ...((A.email.trim()||A.ig.trim())?[`聯絡：${[A.email.trim(),A.ig.trim()&&'IG '+A.ig.trim()].filter(Boolean).join('／')}`]:[]),
     ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
     `飲食：${A.food.length?pick(FOOD,A.food):'沒有特別'}${A.foodNote.trim()?`（備註：${A.foodNote.trim()}）`:''}`,
     `喜歡的氣氛：${VIBE[A.vibe]}`,
@@ -469,13 +477,11 @@ function canNext(id){
   if(id.startsWith('g'))return A.g[+id[1]]>=0;
   return true;
 }
-const banner=()=>CONFIG.confirmed?'':'<div class="banner">預覽版：行程與「猜猜我」的答案目前是範例，主辦人確認後才會正式發出。</div>';
 function dateBtn(k,text){
   return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}">${esc(text)}</button>`;
 }
 function view(id){
   if(id==='intro')return `
-    ${banner()}
     <h1>我們來見面吧！</h1>
     <p>${esc(CONFIG.intro)}</p>
     <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
@@ -494,7 +500,6 @@ function view(id){
       let c='';if(done){if(open){if(k===A.g[i])c='on'}else if(isRight(g,k))c='right';else if(k===A.g[i])c='wrong'}
       return `<button type="button" class="opt ${c}" data-a="guess" data-v="${k}" ${done?'disabled':''}>${esc(t)}</button>`}).join('')}</div>`;
     return `
-    ${banner()}
     <p class="small">慢慢來比較快</p>
     <h2>${esc(g.q)}</h2>${list}
     ${done?`<div class="reveal">${open?`<b class="ok">謝謝你告訴我，</b>${esc(g.note)}`:ok?'<b class="ok">天啊你也太了解我了吧！</b>':`<b class="no">啊啊啊沒事！</b>其實是「${esc(ansText(g))}」。`}${g.note&&!open?`<br>${esc(g.note)}`:''}</div>
@@ -508,7 +513,7 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`${banner()}<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
     CONFIG.trips.forEach((t,ci)=>{
       if(!(showAll||ci===home))return;
       html+=`<div class="grp">${esc(t.city)}</div><div class="stack">${t.when.map((w,wi)=>dateBtn(`c${ci}d${wi}`,fmtWhen(w))).join('')}</div>`;
@@ -532,7 +537,6 @@ function view(id){
     <button class="btn" data-a="next">看我的見面卡</button>`;
   if(id==='result'){
     const r=role(),m=msg();
-    const line=`https://line.me/R/msg/text/?${encodeURIComponent(m)}`;
     return `
     <h2>你的見面卡</h2>
     <div class="card">
@@ -546,16 +550,17 @@ function view(id){
         <dt>方式</dt><dd>${esc(FORMAT[A.format])}</dd>
         <dt>氣氛</dt><dd>${esc(VIBE[A.vibe])}</dd>
         <dt>想聊</dt><dd>${A.topic.length?esc(A.topic.map(i=>TOPIC[i]).join('、')):'都可以'}</dd>
-        <dt>猜猜我</dt><dd>猜中 ${hits()} / ${scored()}</dd>
       </dl>
     </div>
     <p class="small">小王子角色只是好玩的分類，不是正式測驗。</p>
     <h2 style="margin-top:22px">把見面卡傳給我</h2>
-    <textarea id="out" rows="11" readonly>${esc(m)}</textarea>
-    ${CONFIG.firebase?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
+    <label class="f" for="em">想收到「確定可以約」的通知嗎？留 Email 或 IG 都可以（選填）</label>
+    <input id="em" type="email" inputmode="email" maxlength="100" placeholder="Email" value="${esc(A.email)}" data-i="email" autocomplete="email" style="margin-bottom:8px">
+    <input id="ig" type="text" maxlength="60" placeholder="IG 帳號（不含 @）" value="${esc(A.ig)}" data-i="ig" autocomplete="off">
+    <textarea id="out" rows="11" readonly style="margin-top:14px">${esc(m)}</textarea>
+    ${(CONFIG.firebase||CONFIG.sheetUrl)?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
     <div class="btnrow">
       ${CONFIG.igUser?`<a class="btn" data-a="igcopy" href="https://ig.me/m/${encodeURIComponent(CONFIG.igUser)}" target="_blank" rel="noopener">複製並開 IG 私訊</a>`:''}
-      <a class="btn ${CONFIG.igUser?'ghost':''}" href="${line}" target="_blank" rel="noopener">用 LINE 傳</a>
       <button type="button" class="btn ghost" data-a="copy">複製訊息</button>
       <button type="button" class="btn ghost" data-a="share">分享…</button>
     </div>
@@ -578,23 +583,11 @@ function walkerSvg(){
   return '<svg viewBox="0 0 16 28">'+pxSprite(body,P,0,0)+pxSprite(legs,P,0,20)+'<g class="legA">'+pxSprite(A,P,0,25)+'</g><g class="legB">'+pxSprite(B,P,0,25)+'</g></svg>';
 }
 function planetSvg(){
-  const cx=13.5,cy=5.5,rx=13.6,ry=5.8,oy=14;
-  const inE=(x,y,ex,ey,ax,ay)=>{const dx=(x-ex)/ax,dy=(y-ey)/ay;return dx*dx+dy*dy<=1};
   let o='';
-  for(let y=0;y<12;y++)for(let x=0;x<28;x++){
-    const u=(x-cx)/rx,v=(y-cy)/ry,d=Math.sqrt(u*u+v*v);if(d>1)continue;
-    let c='#5A8FB0';
-    if(u*0.8+v<-0.55)c='#7AB0CF';else if(u*0.5+v>0.45)c='#46758F';
-    if(inE(x,y,7,4,3.2,1.5)||inE(x,y,19,7,3.6,1.7)||inE(x,y,12,8,2.2,1.1)||inE(x,y,23,3,2,1))c=v>0.4?'#5F8F4C':'#7FB069';
-    if((x>=14&&x<=16&&y===2)||(x>=4&&x<=5&&y===7))c='#E8F1F5';
-    if(d>0.88)c='#2F5A73';
-    o+=pxRect(x,y+oy,1,1,c);
-  }
-  o+=pxRect(0,6,1,1,'#F2C94C')+pxRect(27,10,1,1,'#F2C94C');
   const M={G:'#A8A8A0',g:'#9A9A92',d:'#7A7A72',D:'#3A3A34',M:'#5A5A54'};
   const moai=["..gGGGGGGg..","..GGGGGGgd..","..GGGGGGgd..","..GDDGGDDgd.","..GDDGGDDgd.","..GGGGGGggd.","..GGGddGgd..","..GGGddGgd..","..GGGddGgd..","..GGGGGGgd..","..GGMMMMgd..","..GGGGGGgd..","...GGGGgd...","..GGGGGGGgd.","..GGGGGGGgd.","..GGGGGGGgd."];
-  o+=pxSprite(moai,M,8,0)+pxRect(11,3,2,2,'#FFE27A','eye')+pxRect(15,3,2,2,'#FFE27A','eye')+pxRect(11,3,1,1,'#fff','eye')+pxRect(15,3,1,1,'#fff','eye');
-  return '<svg viewBox="0 0 28 26">'+o+'</svg>';
+  o+=pxSprite(moai,M,16,0)+pxRect(19,3,2,2,'#FFE27A','eye')+pxRect(23,3,2,2,'#FFE27A','eye')+pxRect(19,3,1,1,'#fff','eye')+pxRect(23,3,1,1,'#fff','eye');
+  return '<svg viewBox="0 0 28 16">'+o+'</svg>';
 }
 let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
@@ -609,7 +602,7 @@ function updateScene(silent){
   const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
   const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
   for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-92)*Math.min(step,B)/B)+'px';
+  w.style.left=((tw-70)*Math.min(step,B)/B)+'px';
   w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
   sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
@@ -654,43 +647,41 @@ document.addEventListener('click',async e=>{
       render(true);break}
     case 'fbsend':{
       if(A.sending||A.sent)break;
+      if(!emailOK(A.email.trim())){A.hint='Email 格式好像不太對，請檢查一下，或清空不填。';render(true);break}
       A.sending=true;A.hint='';render(true);
-      try{
+      const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
+      const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,message:msg()};
+      const jobs=[];
+      if(CONFIG.sheetUrl)jobs.push((async()=>{
+        const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
+        const j=await res.json();if(!j.ok)throw new Error(j.error||'sheet');
+      })());
+      if(CONFIG.firebase)jobs.push((async()=>{
         const V='13.4.0',B='https://www.gstatic.com/firebasejs/'+V+'/';
         const [{initializeApp},{getAuth,signInAnonymously},{getFirestore,collection,addDoc,serverTimestamp}]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
         const app=initializeApp(CONFIG.firebase);
         await signInAnonymously(getAuth(app));
-        const r=role();
         await addDoc(collection(getFirestore(app),'invites'),{
-          createdAt:serverTimestamp(),
-          name:A.name.trim(),
-          relation:A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel],
-          city:cityName(),
-          dates:dateLabels(),
-          format:FORMAT[A.format],
-          invitees:groupOK()?A.invitees.slice(0,5):[],
-          role:r.n,
-          guessHits:hits(),
-          guessTotal:scored(),
-          message:msg()
-        });
-        A.sent=true;
-      }catch(err){
-        console.error(err);
-        A.hint='直接傳送失敗了，請改用下面的 IG／LINE／複製。';
-      }
+          createdAt:serverTimestamp(),name:payload.name,relation,city:payload.city,dates:payload.dates,format:payload.format,
+          invitees:payload.invitees,email:payload.email,ig:payload.ig,role:r.n,guessHits:hits(),guessTotal:scored(),message:payload.message});
+      })());
+      const results=await Promise.allSettled(jobs);
+      results.filter(x=>x.status==='rejected').forEach(x=>console.error(x.reason));
+      if(results.some(x=>x.status==='fulfilled'))A.sent=true;
+      else A.hint='直接傳送失敗了，請改用下面的 IG／複製。';
       A.sending=false;render(true);break}
     case 'share':{
       let done=false;
       try{if(navigator.share){await navigator.share({text:msg()});done=true;A.hint=''}}catch(err){if(err&&err.name==='AbortError')done=true}
-      if(!done)A.hint='這個瀏覽器開不了分享選單，請用「複製訊息」或「用 LINE 傳」。';
+      if(!done)A.hint='這個瀏覽器開不了分享選單，請用「複製訊息」。';
       render(true);break}
   }
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
-  if(k){A[k]=e.target.value;if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
+  if(k){A[k]=e.target.value;if(k==='email'||k==='ig'){const o=document.getElementById('out');if(o)o.value=msg()}if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
 });
 initScene();
 render(false);

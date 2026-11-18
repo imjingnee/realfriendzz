@@ -4,9 +4,11 @@ service cloud.firestore {
     // 邀請卡回覆：已（匿名）登入者只能新增；網頁端不能讀、改、刪（用主控台看資料）
     match /invites/{id} {
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(['createdAt','name','relation','city','dates','format','invitees','role','guessHits','guessTotal','message'])
+        && request.resource.data.keys().hasOnly(['createdAt','name','relation','city','dates','format','invitees','email','ig','role','guessHits','guessTotal','message'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 40
         && (!('invitees' in request.resource.data) || (request.resource.data.invitees is list && request.resource.data.invitees.size() <= 5))
+        && (!('email' in request.resource.data) || (request.resource.data.email is string && request.resource.data.email.size() <= 100))
+        && (!('ig' in request.resource.data) || (request.resource.data.ig is string && request.resource.data.ig.size() <= 60))
         && request.resource.data.message is string && request.resource.data.message.size() <= 2000;
       allow read, update, delete: if false;
     }
