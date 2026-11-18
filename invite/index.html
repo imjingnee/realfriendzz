@@ -54,6 +54,17 @@ p{margin:.5em 0}
 .opt:disabled{cursor:default}
 .opt.right{border-color:var(--ok);background:#DCEBC9}
 .opt.wrong{border-color:var(--no);background:#F2D3C6}
+.cal{background:var(--panel);border:2px solid var(--edge);border-radius:10px;padding:10px;margin:10px 0}
+.calh{display:flex;align-items:center;justify-content:space-between;font-weight:700;margin-bottom:6px}
+.calh button{font:inherit;font-size:1.2rem;line-height:1;background:var(--paper);border:2px solid var(--edge);border-radius:8px;width:44px;height:40px;cursor:pointer;color:var(--ink)}
+.calh button:disabled{opacity:.3;cursor:default}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calg .wd{font-size:.78rem;color:var(--sub);padding:2px 0}
+.calg .d{min-height:44px;border:2px solid transparent;border-radius:8px;background:transparent;font:inherit;color:#9a8460;opacity:.45}
+.calg .d.av{background:var(--paper);border-color:var(--line);color:var(--ink);opacity:1;font-weight:700;cursor:pointer}
+.calg .d.sel{background:var(--ink);border-color:var(--ink);color:#fff}
+.calg .d.open{outline:3px solid var(--accent);outline-offset:1px}
+.pick{margin:12px 0}.pick .grp{margin-top:8px}
 .btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:1.02rem;
   background:var(--gold);color:var(--gold-ink);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;margin-top:18px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
@@ -368,7 +379,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,calMonth:'',dayOpen:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -391,23 +402,33 @@ const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.gu
 const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
-function slotsData(){
-  const out=[];
-  A.dates.forEach(k=>{const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;const t=CONFIG.trips[+m[1]];if(!t)return;const w=t.when[+m[2]];if(!w)return;
-    out.push({city:t.city,d:w.d,to:w.to||'',note:w.note||''})});
+const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+const PERIODS=['早上','中午','晚上'];
+const pad2=n=>String(n).padStart(2,'0');
+const ymd=ds=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');return m?[+m[1],+m[2]-1,+m[3]]:null};
+function periodsOf(note){const n=String(note||''),o=[];if(/早/.test(n))o.push('早上');if(/午/.test(n))o.push('中午');if(/晚/.test(n))o.push('晚上');return o.length?o:PERIODS.slice()}
+function eachDay(w){
+  const a=ymd(w.d);if(!a)return[];const b=ymd(w.to)||a,out=[];
+  for(let k=0;k<62;k++){const d=new Date(a[0],a[1],a[2]+k);if(d>new Date(b[0],b[1],b[2]))break;out.push(`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`)}
   return out;
 }
-const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+function dayMap(ci){
+  const m={};(CONFIG.trips[ci].when||[]).forEach(w=>{const ps=periodsOf(w.note);eachDay(w).forEach(d=>{(m[d]=m[d]||new Set());ps.forEach(p=>m[d].add(p))})});
+  const o={};Object.keys(m).forEach(d=>o[d]=PERIODS.filter(p=>m[d].has(p)));return o;
+}
+function pickedSlots(){
+  const out=[];A.dates.forEach(k=>{const m=/^(\d+)\|(\d{4}-\d{2}-\d{2})\|(.+)$/.exec(k);if(m&&CONFIG.trips[+m[1]])out.push({ci:+m[1],d:m[2],p:m[3]})});
+  return out;
+}
+function slotsData(){return pickedSlots().map(x=>({city:CONFIG.trips[x.ci].city,d:x.d,to:'',note:x.p}))}
+function pickedText(){
+  const by={};pickedSlots().forEach(x=>{((by[x.ci]=by[x.ci]||{})[x.d]=(by[x.ci][x.d]||[])).push(x.p)});
+  return CONFIG.trips.map((t,ci)=>by[ci]?`${t.city} `+Object.keys(by[ci]).sort().map(d=>`${fmtDay(d)} ${PERIODS.filter(p=>by[ci][d].includes(p)).join('、')}`).join('；'):null).filter(Boolean);
+}
 function dateLabels(){
-  const out=[],byCity={},extra=[];
-  A.dates.forEach(k=>{
-    if(k==='none'){extra.push('這些時間都不行，我再告訴你');return}
-    const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;
-    const ci=+m[1],t=CONFIG.trips[ci];if(!t)return;const w=t.when[+m[2]];if(!w)return;
-    (byCity[ci]=byCity[ci]||[]).push([+m[2],fmtWhen(w)]);
-  });
-  CONFIG.trips.forEach((t,ci)=>{if(byCity[ci])out.push(`${t.city} ${byCity[ci].sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('、')}`)});
-  return out.concat(extra);
+  const out=pickedText();
+  if(A.dates.includes('none'))out.push('這些時間都不行，我再告訴你');
+  return out;
 }
 
 function role(){
@@ -480,6 +501,30 @@ function canNext(id){
 function dateBtn(k,text){
   return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}">${esc(text)}</button>`;
 }
+function calView(home,showAll){
+  const cis=showAll?CONFIG.trips.map((_,i)=>i):[home];
+  const all={};cis.forEach(ci=>{const m=dayMap(ci);Object.keys(m).forEach(d=>(all[d]=all[d]||[]).push(ci))});
+  const days=Object.keys(all).sort();if(!days.length)return '<p class="sub">這個城市目前沒有排日期，請選下面「這些時間都不行」，我再跟你約。</p>';
+  const months=days.map(d=>d.slice(0,7)).filter((m,i,a)=>a.indexOf(m)===i);
+  if(!months.includes(A.calMonth))A.calMonth=months[0];
+  const mi=months.indexOf(A.calMonth),[y,mo]=A.calMonth.split('-').map(Number);
+  const first=new Date(y,mo-1,1).getDay(),count=new Date(y,mo,0).getDate();
+  const picked=pickedSlots();
+  let g=['日','一','二','三','四','五','六'].map(w=>`<div class="wd">${w}</div>`).join('')+'<div></div>'.repeat(first);
+  for(let d=1;d<=count;d++){
+    const ds=`${y}-${pad2(mo)}-${pad2(d)}`,av=!!all[ds],sel=picked.some(x=>x.d===ds);
+    g+=`<button type="button" class="d ${av?'av':''} ${sel?'sel':''} ${A.dayOpen===ds?'open':''}" ${av?`data-a="day" data-d="${ds}"`:'disabled'} aria-label="${mo}月${d}日${av?'':'（沒有安排）'}${sel?'（已選）':''}">${d}</button>`;
+  }
+  let h=`<div class="cal"><div class="calh"><button type="button" data-a="calnav" data-m="${months[mi-1]||''}" ${mi>0?'':'disabled'} aria-label="上個月">‹</button><span>${y} 年 ${mo} 月</span><button type="button" data-a="calnav" data-m="${months[mi+1]||''}" ${mi<months.length-1?'':'disabled'} aria-label="下個月">›</button></div><div class="calg">${g}</div></div>`;
+  if(A.dayOpen&&all[A.dayOpen]){
+    h+=`<div class="pick"><b>${esc(fmtDay(A.dayOpen))}　想約哪個時段？</b>`+all[A.dayOpen].map(ci=>{
+      const ps=dayMap(ci)[A.dayOpen];
+      return `${cis.length>1?`<div class="grp">${esc(CONFIG.trips[ci].city)}</div>`:''}<div class="btnrow">${ps.map(p=>{const k=`${ci}|${A.dayOpen}|${p}`;return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}" style="flex:1 1 90px;text-align:center">${p}</button>`}).join('')}</div>`}).join('')+`</div>`;
+  }else h+=`<p class="small">先點一個有顏色的日子。</p>`;
+  const txt=pickedText();
+  if(txt.length)h+=`<div class="reveal"><b>你選了：</b><br>${txt.map(esc).join('<br>')}</div>`;
+  return h;
+}
 function view(id){
   if(id==='intro')return `
     <h1>我們來見面吧！</h1>
@@ -513,12 +558,9 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些時間，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">可以多選。我不會限制時段，有備註的是我已經知道的安排。</p>`;
-    CONFIG.trips.forEach((t,ci)=>{
-      if(!(showAll||ci===home))return;
-      html+=`<div class="grp">${esc(t.city)}</div><div class="stack">${t.when.map((w,wi)=>dateBtn(`c${ci}d${wi}`,fmtWhen(w))).join('')}</div>`;
-    });
-    if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他時間</button>`;
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，再選早上、中午或晚上。可以選很多天。</p>`;
+    html+=calView(home,showAll);
+    if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他日子</button>`;
     html+=`<div class="grp">其他</div><div class="stack">${dateBtn('none','這些時間都不行，我再告訴你')}</div>
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
@@ -602,7 +644,7 @@ function updateScene(silent){
   const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
   const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
   for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-70)*Math.min(step,B)/B)+'px';
+  w.style.left=((tw-52)*Math.min(step,B)/B)+'px';
   w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
   sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
@@ -627,8 +669,10 @@ document.addEventListener('click',async e=>{
     case 'prev':step=Math.max(0,step-1);render(false);break;
     case 'rel':A.rel=v;render(true);break;
     case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
-    case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false}render(true);break;
-    case 'showall':A.showAll=true;render(true);break;
+    case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false;A.calMonth='';A.dayOpen=''}render(true);break;
+    case 'day':A.dayOpen=A.dayOpen===b.dataset.d?'':b.dataset.d;render(true);break;
+    case 'calnav':if(b.dataset.m){A.calMonth=b.dataset.m;A.dayOpen=''}render(true);break;
+    case 'showall':A.showAll=true;A.calMonth='';render(true);break;
     case 'date':{const k=b.dataset.k;const i=A.dates.indexOf(k);if(i>=0)A.dates.splice(i,1);else A.dates.push(k);render(true);break}
     case 'format':A.format=v;render(true);break;
     case 'addinv':{const n=A.inviteInput.trim();if(n&&A.invitees.length<5&&!A.invitees.includes(n))A.invitees.push(n);A.inviteInput='';render(true);break}
