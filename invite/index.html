@@ -573,7 +573,7 @@ function planetSvg(){
   let o='';
   const M={G:'#A8A8A0',g:'#9A9A92',d:'#7A7A72',D:'#3A3A34',M:'#5A5A54'};
   const moai=["..gGGGGGGg..","..GGGGGGgd..","..GGGGGGgd..","..GDDGGDDgd.","..GDDGGDDgd.","..GGGGGGggd.","..GGGddGgd..","..GGGddGgd..","..GGGddGgd..","..GGGGGGgd..","..GGMMMMgd..","..GGGGGGgd..","...GGGGgd...","..GGGGGGGgd.","..GGGGGGGgd.","..GGGGGGGgd."];
-  o+=pxSprite(moai,M,8,0)+pxRect(11,3,2,2,'#FFE27A','eye')+pxRect(15,3,2,2,'#FFE27A','eye')+pxRect(11,3,1,1,'#fff','eye')+pxRect(15,3,1,1,'#fff','eye');
+  o+=pxSprite(moai,M,16,0)+pxRect(19,3,2,2,'#FFE27A','eye')+pxRect(23,3,2,2,'#FFE27A','eye')+pxRect(19,3,1,1,'#fff','eye')+pxRect(23,3,1,1,'#fff','eye');
   return '<svg viewBox="0 0 28 16">'+o+'</svg>';
 }
 let sceneReady=false,scenePrev=0,sceneTimer=0;
@@ -589,7 +589,7 @@ function updateScene(silent){
   const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
   const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
   for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-92)*Math.min(step,B)/B)+'px';
+  w.style.left=((tw-70)*Math.min(step,B)/B)+'px';
   w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
   sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
