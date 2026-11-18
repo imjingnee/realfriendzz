@@ -64,6 +64,11 @@ p{margin:.5em 0}
 .calg .d.av{background:var(--paper);border-color:var(--line);color:var(--ink);opacity:1;font-weight:700;cursor:pointer}
 .calg .d.sel{background:var(--ink);border-color:var(--ink);color:#fff}
 .calg .d.open{outline:3px solid var(--accent);outline-offset:1px}
+.calg .d.adj{background:transparent;border:2px dashed var(--accent);color:var(--accent);opacity:1;font-weight:700}
+.calg .d:not([disabled]):not(.av):not(.adj){opacity:.8;cursor:pointer}
+.opt.adjbtn{border-style:dashed}
+.lg{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px}
+.lg.av{background:var(--paper);border:2px solid var(--line)}.lg.adj{border:2px dashed var(--accent)}
 .pick{margin:12px 0}.pick .grp{margin-top:8px}
 .btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:1.02rem;
   background:var(--gold);color:var(--gold-ink);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;margin-top:18px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
@@ -431,7 +436,7 @@ function pickedText(){
 }
 function dateLabels(){
   const out=pickedText();
-  A.proposals.forEach(q=>out.push(`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`));
+  A.proposals.forEach(q=>out.push(q.cal?`我可以（不在你的行程，請你看能不能調整）：${q.place?q.place+' ':''}${fmtDay(q.d)} ${q.periods.join('、')}`:`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`));
   if(A.dates.includes('none'))out.push('這些時間都不行，我再告訴你');
   return out;
 }
@@ -510,28 +515,36 @@ function calView(home,showAll){
   const cis=showAll?CONFIG.trips.map((_,i)=>i):[home];
   const all={};cis.forEach(ci=>{const m=dayMap(ci);Object.keys(m).forEach(d=>(all[d]=all[d]||[]).push(ci))});
   const days=Object.keys(all).sort();if(!days.length)return '<p class="sub">這個城市目前沒有排日期，請選下面「這些時間都不行」，我再跟你約。</p>';
-  const months=days.map(d=>d.slice(0,7)).filter((m,i,a)=>a.indexOf(m)===i);
+  const t0=new Date(),todayS=`${t0.getFullYear()}-${pad2(t0.getMonth()+1)}-${pad2(t0.getDate())}`;
+  const months=[];{let [fy,fm]=days[0].slice(0,7).split('-').map(Number);const [ly,lm]=days[days.length-1].slice(0,7).split('-').map(Number);
+    for(let k=0;k<12;k++){months.push(`${fy}-${pad2(fm)}`);if(fy===ly&&fm===lm+2)break;fm++;if(fm>12){fm=1;fy++}}}
   if(!months.includes(A.calMonth))A.calMonth=months[0];
   const mi=months.indexOf(A.calMonth),[y,mo]=A.calMonth.split('-').map(Number);
   const first=new Date(y,mo-1,1).getDay(),count=new Date(y,mo,0).getDate();
   const picked=pickedSlots();
   let g=['日','一','二','三','四','五','六'].map(w=>`<div class="wd">${w}</div>`).join('')+'<div></div>'.repeat(first);
   for(let d=1;d<=count;d++){
-    const ds=`${y}-${pad2(mo)}-${pad2(d)}`,av=!!all[ds],sel=picked.some(x=>x.d===ds);
-    g+=`<button type="button" class="d ${av?'av':''} ${sel?'sel':''} ${A.dayOpen===ds?'open':''}" ${av?`data-a="day" data-d="${ds}"`:'disabled'} aria-label="${mo}月${d}日${av?'':'（沒有安排）'}${sel?'（已選）':''}">${d}</button>`;
+    const ds=`${y}-${pad2(mo)}-${pad2(d)}`,av=!!all[ds],sel=picked.some(x=>x.d===ds),adj=A.proposals.some(x=>x.d===ds),past=ds<todayS;
+    g+=`<button type="button" class="d ${av?'av':''} ${sel?'sel':''} ${adj&&!sel?'adj':''} ${A.dayOpen===ds?'open':''}" ${past?'disabled':`data-a="day" data-d="${ds}"`} aria-label="${mo}月${d}日${av?'':'（沒有安排，可請對方調整）'}${sel||adj?'（已選）':''}">${d}</button>`;
   }
   let h=`<div class="cal"><div class="calh"><button type="button" data-a="calnav" data-m="${months[mi-1]||''}" ${mi>0?'':'disabled'} aria-label="上個月">‹</button><span>${y} 年 ${mo} 月</span><button type="button" data-a="calnav" data-m="${months[mi+1]||''}" ${mi<months.length-1?'':'disabled'} aria-label="下個月">›</button></div><div class="calg">${g}</div></div>`;
-  if(A.dayOpen&&all[A.dayOpen]){
-    h+=`<div class="pick"><b>${esc(fmtDay(A.dayOpen))}　想約哪個時段？</b>`+all[A.dayOpen].map(ci=>{
-      const ps=dayMap(ci)[A.dayOpen];
-      return `${cis.length>1?`<div class="grp">${esc(CONFIG.trips[ci].city)}</div>`:''}<div class="btnrow">${ps.map(p=>{const k=`${ci}|${A.dayOpen}|${p}`;return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}" style="flex:1 1 90px;text-align:center">${p}</button>`}).join('')}</div>`}).join('')+`</div>`;
-  }else h+=`<p class="small">先點一個有顏色的日子。</p>`;
-  const txt=pickedText();
+  h+=`<p class="small"><span class="lg av"></span> 我有排的日子　<span class="lg adj"></span> 沒排，但你可以選「我可以」，我再看能不能調整</p>`;
+  if(A.dayOpen){
+    const d=A.dayOpen,offered=all[d]||[],q=A.proposals.find(x=>x.cal&&x.d===d),mine=q?q.periods:[];
+    const offeredPs=new Set();offered.forEach(ci=>dayMap(ci)[d].forEach(pp=>offeredPs.add(pp)));
+    const rest=PERIODS.filter(pp=>!offeredPs.has(pp));
+    h+=`<div class="pick"><b>${esc(fmtDay(d))}　想約哪個時段？</b>`+offered.map(ci=>{
+      const ps=dayMap(ci)[d];
+      return `${cis.length>1?`<div class="grp">${esc(CONFIG.trips[ci].city)}</div>`:''}<div class="btnrow">${ps.map(pp=>{const k=`${ci}|${d}|${pp}`;return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}" style="flex:1 1 90px;text-align:center">${pp}</button>`}).join('')}</div>`}).join('')+
+    (rest.length?`<div class="grp">${offered.length?'其他時段':'這天我原本沒排'}</div><p class="small">我可以！請你看能不能為我調整</p><div class="btnrow">${rest.map(pp=>`<button type="button" class="opt adjbtn ${mine.includes(pp)?'on':''}" data-a="adj" data-d="${d}" data-p="${pp}" style="flex:1 1 90px;text-align:center">${pp}</button>`).join('')}</div>`:'')+`</div>`;
+  }else h+=`<p class="small">先點一個日子。</p>`;
+  const txt=dateLabels().filter(t=>!/^這些時間都不行|^都不行/.test(t));
   if(txt.length)h+=`<div class="reveal"><b>你選了：</b><br>${txt.map(esc).join('<br>')}</div>`;
   return h;
 }
 function propView(){
-  const list=A.proposals.length?`<div class="reveal"><b>我的提議：</b><br>${A.proposals.map((q,i)=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
+  const own=A.proposals.map((q,i)=>[q,i]).filter(x=>!x[0].cal);
+  const list=own.length?`<div class="reveal"><b>我的提議：</b><br>${own.map(([q,i])=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
   if(!A.propOpen)return `<p class="sub">日曆上沒有適合你的？換你來約我！</p><button type="button" class="opt" data-a="propopen">＋ 我想提議別的時間</button>${list}`;
   const today=new Date(),min=`${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
   return `<div class="cal"><b>我想約…</b>
@@ -539,7 +552,7 @@ function propView(){
     <label class="f">什麼時段？（可多選）</label>
     <div class="btnrow">${PERIODS.map(p=>`<button type="button" class="opt ${A.pp.includes(p)?'on':''}" data-a="pper" data-p="${p}" style="flex:1 1 90px;text-align:center">${p}</button>`).join('')}</div>
     <label class="f" for="pl">城市或地點（選填）</label><input id="pl" type="text" maxlength="40" placeholder="例如：吉隆坡、你想去的咖啡廳" value="${esc(A.pplace)}" data-i="pplace">
-    ${A.proposals.length>=3?'<p class="small">最多提議 3 個。</p>':`<p><button type="button" class="btn" data-a="propadd" ${A.pd&&A.pp.length?'':'disabled'} style="margin-top:12px">加入這個提議</button></p>`}
+    ${A.proposals.filter(x=>!x.cal).length>=3?'<p class="small">最多提議 3 個。</p>':`<p><button type="button" class="btn" data-a="propadd" ${A.pd&&A.pp.length?'':'disabled'} style="margin-top:12px">加入這個提議</button></p>`}
     <button type="button" class="link" data-a="propopen">收起</button></div>${list}`;
 }
 function view(id){
@@ -575,7 +588,7 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，再選早上、中午或晚上。可以選很多天。</p>`;
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，再選早上、中午或晚上。灰色的日子也可以點，選「我可以」，我會看能不能為你調整。可以選很多天。</p>`;
     html+=calView(home,showAll);
     if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他日子</button>`;
     html+=`<div class="grp">想約別的時間？</div>${propView()}<div class="stack" style="margin-top:10px">${dateBtn('none','都不行，之後我再告訴你')}</div>
@@ -687,9 +700,16 @@ document.addEventListener('click',async e=>{
     case 'rel':A.rel=v;render(true);break;
     case 'guess':{const i=+STEPS[step][1];if(A.g[i]<0){A.g[i]=v;render(true)}break}
     case 'city':if(A.city!==v){A.city=v;A.dates=[];A.showAll=false;A.calMonth='';A.dayOpen=''}render(true);break;
+    case 'adj':{
+      const d=b.dataset.d,pp=b.dataset.p;let q=A.proposals.find(x=>x.cal&&x.d===d);
+      if(!q){q={d,periods:[],place:(A.city>=0&&A.city<CONFIG.trips.length)?CONFIG.trips[A.city].city:'',cal:true};A.proposals.push(q)}
+      const i=q.periods.indexOf(pp);if(i>=0)q.periods.splice(i,1);else q.periods.push(pp);
+      q.periods=PERIODS.filter(x=>q.periods.includes(x));
+      if(!q.periods.length)A.proposals.splice(A.proposals.indexOf(q),1);
+      render(true);break}
     case 'propopen':A.propOpen=!A.propOpen;render(true);break;
     case 'pper':{const p=b.dataset.p;const i=A.pp.indexOf(p);if(i>=0)A.pp.splice(i,1);else A.pp.push(p);render(true);break}
-    case 'propadd':if(A.pd&&A.pp.length&&A.proposals.length<3){A.proposals.push({d:A.pd,periods:PERIODS.filter(p=>A.pp.includes(p)),place:A.pplace.trim().slice(0,40)});A.pd='';A.pp=[];A.pplace='';A.propOpen=false}render(true);break;
+    case 'propadd':if(A.pd&&A.pp.length&&A.proposals.filter(x=>!x.cal).length<3){A.proposals.push({d:A.pd,periods:PERIODS.filter(p=>A.pp.includes(p)),place:A.pplace.trim().slice(0,40)});A.pd='';A.pp=[];A.pplace='';A.propOpen=false}render(true);break;
     case 'propdel':A.proposals.splice(v,1);render(true);break;
     case 'day':A.dayOpen=A.dayOpen===b.dataset.d?'':b.dataset.d;render(true);break;
     case 'calnav':if(b.dataset.m){A.calMonth=b.dataset.m;A.dayOpen=''}render(true);break;
