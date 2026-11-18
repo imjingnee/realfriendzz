@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>見面排程後台</title>
+<style>
+:root{--bg:#F6ECD2;--panel:#ECD9B4;--ink:#3A2A18;--sub:#6B5638;--line:#A8895A;--accent:#9A4B1F;--ok:#4C7A34;--no:#B0442A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:1.4rem;margin:.2em 0}
+h2{font-size:1.1rem;margin:1.2em 0 .4em}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.tabs button,.btn{font:inherit;border:2px solid var(--ink);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 14px;cursor:pointer}
+.tabs button.on,.btn.pri{background:var(--ink);color:#fff}
+.btn.sm{padding:2px 10px;font-size:.88rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.card{background:#fff8;border:2px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.card.done{border-color:var(--ok);background:#E7F0DA}
+.small{font-size:.85rem;color:var(--sub)}
+.chip{display:inline-block;border:2px solid var(--line);border-radius:999px;padding:0 10px;margin:2px 4px 2px 0;background:var(--panel);font-size:.9rem;font-family:inherit;color:var(--ink)}
+button.chip{cursor:pointer}
+button.chip:hover{border-color:var(--accent);background:#F3E2B8}
+.tag{font-size:.8rem;border-radius:6px;padding:1px 8px;background:var(--line);color:#fff;margin-left:6px}
+.tag.ok{background:var(--ok)}
+.tag.no{background:var(--no)}
+.day{border-left:6px solid var(--accent);padding-left:12px;margin:14px 0}
+.day h3{margin:0 0 4px;font-size:1.05rem}
+.slot{margin:6px 0}
+#msg{position:sticky;top:0;background:var(--ink);color:#fff;padding:8px 14px;border-radius:8px;margin:8px 0;display:none}
+.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:16px;z-index:9}
+.modal .box{background:var(--bg);border:2px solid var(--ink);border-radius:12px;padding:16px;max-width:520px;width:100%}
+label{display:block;margin:10px 0 2px;font-weight:700;font-size:.92rem}
+input,textarea,select{font:inherit;width:100%;border:2px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink)}
+input[type=checkbox]{width:auto}
+.row{display:flex;gap:10px}.row>*{flex:1}
+pre{white-space:pre-wrap;margin:4px 0;font:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>見面排程後台</h1>
+  <p class="small" id="sum">載入中…</p>
+  <div id="msg" role="status"></div>
+  <div class="tabs" id="tabs">
+    <button data-t="cal" class="on">排程日曆</button>
+    <button data-t="rep">所有回覆</button>
+    <button data-t="roster">誰還沒填</button>
+    <button id="reload">重新整理</button>
+  </div>
+  <div id="view"></div>
+</div>
+<div class="modal" id="modal"><div class="box" id="box"></div></div>
+<script>
+const KEY=<?!= JSON.stringify(key) ?>;
+let D={rows:[],roster:[],missing:[]},tab='cal',cur=null;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const WD=['日','一','二','三','四','五','六'];
+function fmtDay(ds){const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');if(!m)return ds||'';const d=new Date(+m[1],+m[2]-1,+m[3]);return `${+m[2]}/${+m[3]}（${WD[d.getDay()]}）`}
+function slotLabel(s){return `${s.city} ${fmtDay(s.d)}${s.to&&s.to!==s.d?'–'+fmtDay(s.to):''}${s.note?' '+s.note:''}`}
+function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display='none',5000)}
+function call(fn,...args){
+  return new Promise((ok,bad)=>google.script.run.withSuccessHandler(ok).withFailureHandler(e=>bad(new Error(e&&e.message||String(e))))[fn](KEY,...args));
+}
+async function load(){
+  try{const r=await call('adminData');D.rows=r.rows;D.roster=r.roster;D.missing=r.missing;render()}
+  catch(e){$('#sum').textContent='載入失敗：'+e.message}
+}
+function render(){
+  const total=D.rows.length,conf=D.rows.filter(r=>r.status==='已確認').length;
+  $('#sum').textContent=`已收到 ${total} 份回覆，已確認 ${conf} 位，待安排 ${total-conf} 位`+(D.roster.length?`，名單上還沒填：${D.missing.length} 位`:'');
+  document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  $('#view').innerHTML=tab==='cal'?viewCal():tab==='rep'?viewRep():viewRoster();
+}
+function contact(r){
+  const p=[];
+  if(r.email)p.push(`✉ ${esc(r.email)}`);
+  if(r.ig)p.push(`IG <a href="https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">${esc(r.ig)}</a>`);
+  return p.length?p.join('　'):'<span class="small">沒留聯絡方式</span>';
+}
+function viewCal(){
+  const confirmed=D.rows.filter(r=>r.status==='已確認').sort((a,b)=>(a.confDate+a.confTime).localeCompare(b.confDate+b.confTime));
+  let h=`<h2>已確認的行程（${confirmed.length}）</h2>`;
+  h+=confirmed.length?confirmed.map(r=>`<div class="card done"><b>${esc(fmtDay(r.confDate))} ${esc(r.confTime)}</b>　${esc(r.confCity||r.city)}　<b>${esc(r.name)}</b>
+    <div class="small">${contact(r)}</div>
+    <button class="btn sm" data-act="book" data-id="${esc(r.id)}">改時間</button> <button class="btn sm" data-act="cancel" data-id="${esc(r.id)}">取消</button></div>`).join(''):'<p class="small">還沒有。從下面點朋友的名字就能安排。</p>';
+  const days={};
+  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.forEach(s=>{
+    const k=s.d+'|'+s.city+'|'+s.note;((days[s.d]=days[s.d]||{})[s.city+'|'+s.note]=(days[s.d][s.city+'|'+s.note]||{s:s,p:[]})).p.push(r)}));
+  const ds=Object.keys(days).sort();
+  h+=`<h2>還沒安排的人，各時段誰可以（點名字來安排）</h2>`;
+  h+=ds.length?ds.map(d=>{
+    const booked=confirmed.filter(r=>r.confDate===d);
+    return `<div class="day"><h3>${esc(fmtDay(d))}${booked.length?`<span class="tag ok">已排 ${booked.length}</span>`:''}</h3>`+
+    Object.values(days[d]).map(x=>`<div class="slot"><b>${esc(x.s.city)} ${esc(x.s.note)}</b>：`+
+      x.p.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.city)}" data-note="${esc(x.s.note)}">${esc(r.name)}</button>`).join('')+`</div>`).join('')+`</div>`;
+  }).join(''):'<p class="small">目前沒有待安排的時段。</p>';
+  const none=D.rows.filter(r=>r.status!=='已確認'&&!r.slots.length);
+  if(none.length)h+=`<h2>沒選到時段／時間都不行（${none.length}）</h2>`+none.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}">${esc(r.name)}</button>`).join('')+`<p class="small">這些人要你再跟他們約，點名字可手動指定日期。</p>`;
+  return h;
+}
+function viewRep(){
+  if(!D.rows.length)return '<p class="small">還沒有人填。</p>';
+  return D.rows.slice().reverse().map(r=>`<div class="card ${r.status==='已確認'?'done':''}">
+    <b>${esc(r.name)}</b><span class="tag ${r.status==='已確認'?'ok':''}">${esc(r.status)}</span> <span class="small">${esc(r.time)}・${esc(r.relation)}</span>
+    <div>${esc(r.city)}　${esc(r.format)}${r.invitees?`　想邀請：${esc(r.invitees)}`:''}</div>
+    <div class="small">角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
+    <div><pre>${esc(r.dates)}</pre></div>
+    <div>${contact(r)}</div>
+    <button class="btn sm" data-act="book" data-id="${esc(r.id)}">${r.status==='已確認'?'改時間':'安排時間'}</button></div>`).join('');
+}
+function viewRoster(){
+  const done=D.roster.filter(n=>!D.missing.includes(n));
+  return `<h2>你的邀請名單</h2><p class="small">一行一個暱稱（要跟朋友填的暱稱一樣才對得起來）。存好後這裡會列出誰還沒填。</p>
+  <textarea id="rost" rows="6" placeholder="小明&#10;小美">${esc(D.roster.join('\n'))}</textarea>
+  <p><button class="btn pri" data-act="saveRoster">儲存名單</button></p>
+  ${D.roster.length?`<h2>還沒填（${D.missing.length}）</h2>${D.missing.map(n=>`<span class="chip">${esc(n)}</span>`).join('')||'<p class="small">全部都填了 🎉</p>'}
+  <h2>已填（${done.length}）</h2>${done.map(n=>`<span class="chip">${esc(n)} ✓</span>`).join('')}`:''}`;
+}
+const NOTE_T=n=>/早/.test(n)?['09:00','11:30']:/晚/.test(n)?['18:30','21:00']:/午/.test(n)?['12:00','14:00']:['12:00','14:00'];
+function openBook(id,pre){
+  const r=D.rows.find(x=>x.id===id);if(!r)return;
+  const first=r.slots[0]||{};
+  const d=(pre&&pre.d)||r.confDate||first.d||'';
+  const city=(pre&&pre.city)||r.confCity||first.city||r.city;
+  const [s0,e0]=r.confTime?r.confTime.split('–'):NOTE_T((pre&&pre.note)||first.note||'');
+  cur={r:r};
+  $('#box').innerHTML=`<h2 style="margin-top:0">安排：${esc(r.name)}</h2>
+  <div class="small">${contact(r)}</div>
+  ${r.slots.length?`<p class="small">他可以的時段：${r.slots.map(s=>esc(slotLabel(s))).join('、')}</p>`:'<p class="small">他沒有選時段，請自己指定日期。</p>'}
+  <label>日期</label><input type="date" id="bd" value="${esc(d)}">
+  <div class="row"><div><label>開始</label><input type="time" id="bs" value="${esc(s0)}"></div><div><label>結束</label><input type="time" id="be" value="${esc(e0)}"></div></div>
+  <label>地點／城市</label><input id="bc" value="${esc(city)}">
+  ${r.email?`<label><input type="checkbox" id="bm" checked> 同時寄確認信給 ${esc(r.email)}</label>
+  <label>信件主旨</label><input id="bsub" value="我們確定見面囉！">
+  <label>信件內容</label><textarea id="bbody" rows="7"></textarea>`:
+  `<p class="small">他沒留 Email。確認後下面會給你一段文字，可以複製後用 IG 傳給他。</p>`}
+  <p><button class="btn pri" id="bok">確認並建立日曆</button> <button class="btn" id="bno">取消</button></p>
+  <div id="berr" class="small" style="color:var(--no)"></div>`;
+  const fill=()=>{const b=$('#bbody');if(b)b.value=mailBody(r)};
+  fill();
+  ['#bd','#bs','#be','#bc'].forEach(s=>$(s).addEventListener('change',()=>{const b=$('#bbody');if(b&&!b.dataset.edited)fill()}));
+  if($('#bbody'))$('#bbody').addEventListener('input',e=>e.target.dataset.edited='1');
+  $('#bno').onclick=closeBook;
+  $('#bok').onclick=()=>submitBook(false);
+  $('#modal').style.display='flex';
+}
+function mailBody(r){
+  return `嗨 ${r.name}！\n\n我們約在 ${fmtDay($('#bd').value)} ${$('#bs').value}–${$('#be').value}，地點：${$('#bc').value}。\n細節我再跟你確認，到時候見！`;
+}
+function closeBook(){$('#modal').style.display='none';cur=null}
+async function submitBook(force){
+  const r=cur.r;const o={date:$('#bd').value,start:$('#bs').value,end:$('#be').value,city:$('#bc').value,force:force,
+    sendMail:!!($('#bm')&&$('#bm').checked),subject:$('#bsub')?$('#bsub').value:'',body:$('#bbody')?$('#bbody').value:''};
+  if(!o.date||!o.start||!o.end){$('#berr').textContent='請填日期和時間';return}
+  $('#bok').disabled=true;$('#berr').textContent='處理中…';
+  try{
+    const res=await call('confirmBooking',r.id,o);
+    if(res.conflict){
+      $('#berr').innerHTML=`你的日曆這段時間已經有：${esc(res.conflict.join('、'))}。 <button class="btn sm" id="force">還是要排</button>`;
+      $('#bok').disabled=false;$('#force').onclick=()=>submitBook(true);return;
+    }
+    D.rows=res.rows;
+    const ig=r.ig&&!r.email?`\n\nIG：https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}`:'';
+    closeBook();render();
+    if(res.mailed)toast(`已建立日曆，也寄信給 ${r.name} 了`);
+    else if(!r.email){showText(r,o)}
+    else toast('已建立日曆');
+  }catch(e){$('#berr').textContent='失敗：'+e.message;$('#bok').disabled=false}
+}
+function showText(r,o){
+  const t=`嗨 ${r.name}！我們約在 ${fmtDay(o.date)} ${o.start}–${o.end}，地點：${o.city}。到時候見！`;
+  $('#box').innerHTML=`<h2 style="margin-top:0">已建立日曆 ✅</h2><p>${esc(r.name)} 沒有 Email，請你自己傳這段給他：</p>
+  <textarea id="cp" rows="4" readonly>${esc(t)}</textarea>
+  <p><button class="btn pri" id="cpb">複製</button> ${r.ig?`<a class="btn" href="https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">開 IG 私訊</a>`:''} <button class="btn" id="cls">關閉</button></p>`;
+  $('#cpb').onclick=()=>{$('#cp').select();try{document.execCommand('copy');toast('已複製')}catch(e){}};
+  $('#cls').onclick=closeBook;$('#modal').style.display='flex';
+}
+document.addEventListener('click',async e=>{
+  const t=e.target.closest('[data-t]');if(t){tab=t.dataset.t;render();return}
+  if(e.target.id==='reload'){load();return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act;
+  if(a==='book')openBook(b.dataset.id,{d:b.dataset.d,city:b.dataset.city,note:b.dataset.note});
+  if(a==='cancel'){
+    if(!confirm('取消這個行程？日曆上的活動也會刪掉（不會寄信）。'))return;
+    try{const r=await call('cancelBooking',b.dataset.id);D.rows=r.rows;render();toast('已取消')}catch(err){toast('失敗：'+err.message)}
+  }
+  if(a==='saveRoster'){
+    try{const names=$('#rost').value.split('\n').map(s=>s.trim()).filter(Boolean);
+      const r=await call('saveRoster',names);D.roster=r.roster;D.missing=r.missing;render();toast('名單已儲存')}catch(err){toast('失敗：'+err.message)}
+  }
+});
+load();
+</script>
+</body>
+</html>

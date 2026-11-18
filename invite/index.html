@@ -121,6 +121,8 @@ textarea{resize:vertical;line-height:1.6}
 /* ===== 主辦人設定：只需要改這一區 ===== */
 const CONFIG={
   title:'見面邀請',
+  /* 後台（Google Apps Script 網頁應用程式）的網址，部署後貼在這裡，見 backend/README.md。留空就只送 Firebase */
+  sheetUrl:'',
   igUser:'imjingnee',         // ★ 你的 IG 帳號（不含 @），填了結果頁才會有「複製並開 IG 私訊」按鈕
   /* Firebase 網頁設定（公開用途，保護資料靠 Firestore 安全規則）。填了才會出現「直接傳給我」按鈕 */
   firebase:{apiKey:"AIzaSyDTdfkDYqruftnP8PSI0fZMyevxMuauBuo",authDomain:"realfriendzz.firebaseapp.com",projectId:"realfriendzz",storageBucket:"realfriendzz.firebasestorage.app",messagingSenderId:"891568132632",appId:"1:891568132632:web:caea74823784a38bd0e96d"},
@@ -366,7 +368,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','g3','city','dates','format','food','vibe','arrive','topic','result'];
 const CARD_N=7;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -389,6 +391,13 @@ const hits=()=>A.g.filter((v,i)=>CONFIG.guess[i].answer!=null&&isRight(CONFIG.gu
 const openAns=()=>{const k=CONFIG.guess.findIndex(g=>g.answer==null);return k>=0&&A.g[k]>=0?CONFIG.guess[k].opts[A.g[k]]:''};
 const cityName=()=>A.city>=0&&A.city<CONFIG.trips.length?CONFIG.trips[A.city].city:(A.city===CONFIG.trips.length?`其他：${A.cityOther.trim()||'（沒填）'}`:'（沒選）');
 const isOther=()=>A.city===CONFIG.trips.length;
+function slotsData(){
+  const out=[];
+  A.dates.forEach(k=>{const m=/^c(\d+)d(\d+)$/.exec(k);if(!m)return;const t=CONFIG.trips[+m[1]];if(!t)return;const w=t.when[+m[2]];if(!w)return;
+    out.push({city:t.city,d:w.d,to:w.to||'',note:w.note||''})});
+  return out;
+}
+const emailOK=v=>!v||/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 function dateLabels(){
   const out=[],byCity={},extra=[];
   A.dates.forEach(k=>{
@@ -435,6 +444,7 @@ function msg(){
     `我在：${cityName()}`,
     `方便的時間：${dateLabels().join('；')||'（沒選）'}`,
     `見面方式：${FORMAT[A.format]}`,
+    ...((A.email.trim()||A.ig.trim())?[`聯絡：${[A.email.trim(),A.ig.trim()&&'IG '+A.ig.trim()].filter(Boolean).join('／')}`]:[]),
     ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
     `飲食：${A.food.length?pick(FOOD,A.food):'沒有特別'}${A.foodNote.trim()?`（備註：${A.foodNote.trim()}）`:''}`,
     `喜歡的氣氛：${VIBE[A.vibe]}`,
@@ -544,8 +554,11 @@ function view(id){
     </div>
     <p class="small">小王子角色只是好玩的分類，不是正式測驗。</p>
     <h2 style="margin-top:22px">把見面卡傳給我</h2>
-    <textarea id="out" rows="11" readonly>${esc(m)}</textarea>
-    ${CONFIG.firebase?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
+    <label class="f" for="em">想收到「確定可以約」的通知嗎？留 Email 或 IG 都可以（選填）</label>
+    <input id="em" type="email" inputmode="email" maxlength="100" placeholder="Email" value="${esc(A.email)}" data-i="email" autocomplete="email" style="margin-bottom:8px">
+    <input id="ig" type="text" maxlength="60" placeholder="IG 帳號（不含 @）" value="${esc(A.ig)}" data-i="ig" autocomplete="off">
+    <textarea id="out" rows="11" readonly style="margin-top:14px">${esc(m)}</textarea>
+    ${(CONFIG.firebase||CONFIG.sheetUrl)?(A.sent?`<p class="small" role="status">✅ 已經送到我這裡了，謝謝你！我收到後會回你。</p>`:`<button type="button" class="btn" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'直接傳給我'}</button>`):''}
     <div class="btnrow">
       ${CONFIG.igUser?`<a class="btn" data-a="igcopy" href="https://ig.me/m/${encodeURIComponent(CONFIG.igUser)}" target="_blank" rel="noopener">複製並開 IG 私訊</a>`:''}
       <button type="button" class="btn ghost" data-a="copy">複製訊息</button>
@@ -634,31 +647,29 @@ document.addEventListener('click',async e=>{
       render(true);break}
     case 'fbsend':{
       if(A.sending||A.sent)break;
+      if(!emailOK(A.email.trim())){A.hint='Email 格式好像不太對，請檢查一下，或清空不填。';render(true);break}
       A.sending=true;A.hint='';render(true);
-      try{
+      const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
+      const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:A.email.trim(),ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,message:msg()};
+      const jobs=[];
+      if(CONFIG.sheetUrl)jobs.push((async()=>{
+        const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
+        const j=await res.json();if(!j.ok)throw new Error(j.error||'sheet');
+      })());
+      if(CONFIG.firebase)jobs.push((async()=>{
         const V='13.4.0',B='https://www.gstatic.com/firebasejs/'+V+'/';
         const [{initializeApp},{getAuth,signInAnonymously},{getFirestore,collection,addDoc,serverTimestamp}]=await Promise.all([import(B+'firebase-app.js'),import(B+'firebase-auth.js'),import(B+'firebase-firestore.js')]);
         const app=initializeApp(CONFIG.firebase);
         await signInAnonymously(getAuth(app));
-        const r=role();
         await addDoc(collection(getFirestore(app),'invites'),{
-          createdAt:serverTimestamp(),
-          name:A.name.trim(),
-          relation:A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel],
-          city:cityName(),
-          dates:dateLabels(),
-          format:FORMAT[A.format],
-          invitees:groupOK()?A.invitees.slice(0,5):[],
-          role:r.n,
-          guessHits:hits(),
-          guessTotal:scored(),
-          message:msg()
-        });
-        A.sent=true;
-      }catch(err){
-        console.error(err);
-        A.hint='直接傳送失敗了，請改用下面的 IG／複製。';
-      }
+          createdAt:serverTimestamp(),name:payload.name,relation,city:payload.city,dates:payload.dates,format:payload.format,
+          invitees:payload.invitees,email:payload.email,ig:payload.ig,role:r.n,guessHits:hits(),guessTotal:scored(),message:payload.message});
+      })());
+      const results=await Promise.allSettled(jobs);
+      results.filter(x=>x.status==='rejected').forEach(x=>console.error(x.reason));
+      if(results.some(x=>x.status==='fulfilled'))A.sent=true;
+      else A.hint='直接傳送失敗了，請改用下面的 IG／複製。';
       A.sending=false;render(true);break}
     case 'share':{
       let done=false;
@@ -670,7 +681,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='iv'){e.preventDefault();const b=document.querySelector('[data-a=addinv]');if(b)b.click()}});
 document.addEventListener('input',e=>{
   const k=e.target.dataset&&e.target.dataset.i;
-  if(k){A[k]=e.target.value;if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
+  if(k){A[k]=e.target.value;if(k==='email'||k==='ig'){const o=document.getElementById('out');if(o)o.value=msg()}if(k==='name'){const b=document.querySelector('.btn[data-a=next]');if(b)b.disabled=!canNext(STEPS[step])}}
 });
 initScene();
 render(false);
