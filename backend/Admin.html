@@ -53,6 +53,18 @@ pre{white-space:pre-wrap;margin:4px 0;font:inherit}
 </div>
 <div class="modal" id="modal"><div class="box" id="box"></div></div>
 <script>
+/* 第 1 段：最小的檢查程式。就算第 2 段主程式出錯，這段一定會先跑，並把錯誤顯示在頁面上 */
+(function(){
+  var sum=document.getElementById('sum');
+  if(sum)sum.textContent='步驟 1：頁面程式已啟動，正在載入主程式…';
+  window.addEventListener('error',function(ev){
+    var s=document.getElementById('sum');
+    if(s)s.textContent='頁面錯誤：'+(ev.message||'未知')+'（第 '+(ev.lineno||'?')+' 行）請把這行文字抄給 Claude';
+  });
+})();
+</script>
+<script>
+(function(){
 const KEY=<?!= JSON.stringify(key) ?>;
 let D={rows:[],roster:[],missing:[]},tab='cal',cur=null;
 const $=s=>document.querySelector(s);
@@ -209,6 +221,7 @@ document.addEventListener('click',async e=>{
   }
 });
 load();
+})();
 </script>
 </body>
 </html>
