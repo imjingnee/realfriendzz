@@ -434,9 +434,13 @@ function pickedText(){
   const by={};pickedSlots().forEach(x=>{((by[x.ci]=by[x.ci]||{})[x.d]=(by[x.ci][x.d]||[])).push(x.p)});
   return CONFIG.trips.map((t,ci)=>by[ci]?`${t.city} `+Object.keys(by[ci]).sort().map(d=>`${fmtDay(d)} ${PERIODS.filter(p=>by[ci][d].includes(p)).join('、')}`).join('；'):null).filter(Boolean);
 }
-function dateLabels(){
+function dateLabels(ui){
   const out=pickedText();
-  A.proposals.forEach(q=>out.push(q.cal?`我可以（不在你的行程，請你看能不能調整）：${q.place?q.place+' ':''}${fmtDay(q.d)} ${q.periods.join('、')}`:`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`));
+  A.proposals.forEach(q=>{
+    const pl=q.place?q.place+' ':'';
+    if(q.cal)out.push(ui?`${pl}${fmtDay(q.d)} ${q.periods.join('、')}（這天我原本沒排，我會想辦法）`:`我可以（這天不在你的行程，請你看看能不能調整）：${pl}${fmtDay(q.d)} ${q.periods.join('、')}`);
+    else out.push(ui?`${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（你提議約在${q.place}）`:'（你提議的時間）'}`:`我提議：${fmtDay(q.d)} ${q.periods.join('、')}${q.place?`（地點：${q.place}）`:''}`);
+  });
   if(A.dates.includes('none'))out.push('這些時間都不行，我再告訴你');
   return out;
 }
@@ -514,7 +518,7 @@ function dateBtn(k,text){
 function calView(home,showAll){
   const cis=showAll?CONFIG.trips.map((_,i)=>i):[home];
   const all={};cis.forEach(ci=>{const m=dayMap(ci);Object.keys(m).forEach(d=>(all[d]=all[d]||[]).push(ci))});
-  const days=Object.keys(all).sort();if(!days.length)return '<p class="sub">這個城市目前沒有排日期，請選下面「這些時間都不行」，我再跟你約。</p>';
+  const days=Object.keys(all).sort();if(!days.length)return '<p class="sub">這個城市目前沒有排日期，請用下面的「提議別的時間」告訴我你方便的日子，我再跟你約。</p>';
   const t0=new Date(),todayS=`${t0.getFullYear()}-${pad2(t0.getMonth()+1)}-${pad2(t0.getDate())}`;
   const months=[];{let [fy,fm]=days[0].slice(0,7).split('-').map(Number);const [ly,lm]=days[days.length-1].slice(0,7).split('-').map(Number);
     for(let k=0;k<12;k++){months.push(`${fy}-${pad2(fm)}`);if(fy===ly&&fm===lm+2)break;fm++;if(fm>12){fm=1;fy++}}}
@@ -528,26 +532,26 @@ function calView(home,showAll){
     g+=`<button type="button" class="d ${av?'av':''} ${sel?'sel':''} ${adj&&!sel?'adj':''} ${A.dayOpen===ds?'open':''}" ${past?'disabled':`data-a="day" data-d="${ds}"`} aria-label="${mo}月${d}日${av?'':'（沒有安排，可請對方調整）'}${sel||adj?'（已選）':''}">${d}</button>`;
   }
   let h=`<div class="cal"><div class="calh"><button type="button" data-a="calnav" data-m="${months[mi-1]||''}" ${mi>0?'':'disabled'} aria-label="上個月">‹</button><span>${y} 年 ${mo} 月</span><button type="button" data-a="calnav" data-m="${months[mi+1]||''}" ${mi<months.length-1?'':'disabled'} aria-label="下個月">›</button></div><div class="calg">${g}</div></div>`;
-  h+=`<p class="small"><span class="lg av"></span> 我有排的日子　<span class="lg adj"></span> 沒排，但你可以選「我可以」，我再看能不能調整</p>`;
+  h+=`<p class="small"><span class="lg av"></span> 我有排的日子　<span class="lg adj"></span> 我原本沒排的日子（你只有這天方便的話，也可以點）</p>`;
   if(A.dayOpen){
     const d=A.dayOpen,offered=all[d]||[],q=A.proposals.find(x=>x.cal&&x.d===d),mine=q?q.periods:[];
     const offeredPs=new Set();offered.forEach(ci=>dayMap(ci)[d].forEach(pp=>offeredPs.add(pp)));
     const rest=PERIODS.filter(pp=>!offeredPs.has(pp));
-    h+=`<div class="pick"><b>${esc(fmtDay(d))}　想約哪個時段？</b>`+offered.map(ci=>{
+    h+=`<div class="pick"><b>${esc(fmtDay(d))}　你想約哪個時段？</b>`+offered.map(ci=>{
       const ps=dayMap(ci)[d];
       return `${cis.length>1?`<div class="grp">${esc(CONFIG.trips[ci].city)}</div>`:''}<div class="btnrow">${ps.map(pp=>{const k=`${ci}|${d}|${pp}`;return `<button type="button" class="opt ${A.dates.includes(k)?'on':''}" data-a="date" data-k="${k}" style="flex:1 1 90px;text-align:center">${pp}</button>`}).join('')}</div>`}).join('')+
-    (rest.length?`<div class="grp">${offered.length?'其他時段':'這天我原本沒排'}</div><p class="small">我可以！請你看能不能為我調整</p><div class="btnrow">${rest.map(pp=>`<button type="button" class="opt adjbtn ${mine.includes(pp)?'on':''}" data-a="adj" data-d="${d}" data-p="${pp}" style="flex:1 1 90px;text-align:center">${pp}</button>`).join('')}</div>`:'')+`</div>`;
+    (rest.length?`<div class="grp">${offered.length?'這些時段我原本沒排':'這天我原本沒排'}</div><p class="small">如果你只有這個時段方便，點下面告訴我，我會想辦法調整。</p><div class="btnrow">${rest.map(pp=>`<button type="button" class="opt adjbtn ${mine.includes(pp)?'on':''}" data-a="adj" data-d="${d}" data-p="${pp}" style="flex:1 1 90px;text-align:center">${pp}</button>`).join('')}</div>`:'')+`</div>`;
   }else h+=`<p class="small">先點一個日子。</p>`;
-  const txt=dateLabels().filter(t=>!/^這些時間都不行|^都不行/.test(t));
+  const txt=dateLabels(true).filter(t=>!/^這些時間都不行|^都不行/.test(t));
   if(txt.length)h+=`<div class="reveal"><b>你選了：</b><br>${txt.map(esc).join('<br>')}</div>`;
   return h;
 }
 function propView(){
   const own=A.proposals.map((q,i)=>[q,i]).filter(x=>!x[0].cal);
-  const list=own.length?`<div class="reveal"><b>我的提議：</b><br>${own.map(([q,i])=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
-  if(!A.propOpen)return `<p class="sub">日曆上沒有適合你的？換你來約我！</p><button type="button" class="opt" data-a="propopen">＋ 我想提議別的時間</button>${list}`;
+  const list=own.length?`<div class="reveal"><b>你的提議：</b><br>${own.map(([q,i])=>`${esc(fmtDay(q.d))} ${esc(q.periods.join('、'))}${q.place?`（${esc(q.place)}）`:''} <button type="button" class="link" data-a="propdel" data-v="${i}" aria-label="移除提議" style="padding:0 6px">移除</button>`).join('<br>')}</div>`:'';
+  if(!A.propOpen)return `<p class="sub">日曆上沒有適合的時間？換你來約我！告訴我你方便的日子，我會盡量配合。</p><button type="button" class="opt" data-a="propopen">＋ 提議別的時間</button>${list}`;
   const today=new Date(),min=`${today.getFullYear()}-${pad2(today.getMonth()+1)}-${pad2(today.getDate())}`;
-  return `<div class="cal"><b>我想約…</b>
+  return `<div class="cal"><b>你想約…</b>
     <label class="f" for="pd">哪一天？</label><input id="pd" type="date" min="${min}" value="${esc(A.pd)}" data-i="pd">
     <label class="f">什麼時段？（可多選）</label>
     <div class="btnrow">${PERIODS.map(p=>`<button type="button" class="opt ${A.pp.includes(p)?'on':''}" data-a="pper" data-p="${p}" style="flex:1 1 90px;text-align:center">${p}</button>`).join('')}</div>
@@ -588,10 +592,10 @@ function view(id){
   if(id==='dates'){
     const home=(A.city>=0&&A.city<CONFIG.trips.length)?A.city:-1;
     const showAll=A.showAll||home<0;
-    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，再選早上、中午或晚上。灰色的日子也可以點，選「我可以」，我會看能不能為你調整。可以選很多天。</p>`;
+    let html=`<p class="small">見面卡 2 / ${CARD_N}</p><h2>${home>=0?`我在${esc(CONFIG.trips[home].city)}的這些日子，你哪天方便？`:'我的行程如下，你哪天方便？'}</h2><p class="sub">點日曆上有顏色的日子，選你方便的時段，可以選很多天。灰色的日子是我原本沒排的，但如果你只有那天方便，也可以點，我會看看能不能調整。</p>`;
     html+=calView(home,showAll);
     if(home>=0&&!A.showAll&&CONFIG.trips.length>1)html+=`<button type="button" class="link" data-a="showall">我也願意去其他城市，看其他日子</button>`;
-    html+=`<div class="grp">想約別的時間？</div>${propView()}<div class="stack" style="margin-top:10px">${dateBtn('none','都不行，之後我再告訴你')}</div>
+    html+=`<div class="grp">沒有適合的時間？</div>${propView()}<div class="stack" style="margin-top:10px">${dateBtn('none','這些時間都不行，之後再說')}</div>
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
     return html;
   }
