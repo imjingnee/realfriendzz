@@ -686,17 +686,18 @@ function planetSvg(){
 let sceneReady=false,scenePrev=0,sceneTimer=0;
 function initScene(){
   const el=document.getElementById('scene');if(!el)return;
-  const B=STEPS.length-1;
-  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(B)+'</div>';
+  const N=STEPS.length+1; // 每一步一格，最後一格是石像的
+  el.innerHTML='<div class="walker idle" id="walker">'+walkerSvg()+'</div><div class="planet" id="planet">'+planetSvg()+'</div><div class="blocks" id="blocks">'+'<div class="b todo"></div>'.repeat(N)+'</div>';
   sceneReady=true;
   window.addEventListener('resize',()=>{const w=document.getElementById('walker');if(!w)return;w.style.transition='none';updateScene(true);setTimeout(()=>{w.style.transition=''},50)});
 }
 function updateScene(silent){
   if(!sceneReady)return;
   const el=document.getElementById('scene'),w=document.getElementById('walker'),pl=document.getElementById('planet');
-  const bs=document.getElementById('blocks').children,B=STEPS.length-1,tw=el.clientWidth;
-  for(let i=0;i<B;i++){let c='b '+(i<step?'done':'todo');if(!silent&&i===step-1&&step>scenePrev)c+=' pop';bs[i].className=c}
-  w.style.left=((tw-52)*Math.min(step,B)/B)+'px';
+  const bs=document.getElementById('blocks').children,B=STEPS.length-1,N=bs.length,tw=el.clientWidth;
+  for(let i=0;i<N;i++){const on=i<=step||(i===N-1&&step>=B);let c='b '+(on?'done':'todo');if(!silent&&i===step&&step>scenePrev)c+=' pop';bs[i].className=c}
+  // 旅人站在第 step 格的正中央；最後一格留給石像
+  w.style.left=(((Math.min(step,B)+0.5)/N)*tw-20)+'px';
   w.classList.remove('idle','five');pl.classList.remove('five');
   clearTimeout(sceneTimer);
   sceneTimer=setTimeout(()=>{w.classList.add('idle');if(step>=B){w.classList.add('five');pl.classList.add('five')}},750);
