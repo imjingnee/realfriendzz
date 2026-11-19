@@ -74,6 +74,7 @@ p{margin:.5em 0}
 .lg{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px}
 .lg.av{background:var(--paper);border:2px solid var(--line)}.lg.adj{border:2px dashed var(--accent)}
 .pick{margin:12px 0}.pick .grp{margin-top:8px}
+[hidden]{display:none!important}
 .btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:700;font-size:1.02rem;
   background:var(--gold);color:var(--gold-ink);border:2px solid var(--ink);border-radius:8px;padding:14px 16px;margin-top:18px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
@@ -392,7 +393,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','cd','plan','mood','result'];
 const CARD_N=3;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false,igDone:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -658,12 +659,9 @@ function view(id){
     <textarea id="out" rows="11" readonly style="margin-top:14px">${esc(m)}</textarea>
     ${CONFIG.igUser?`<a class="btn" data-a="igcopy" href="https://ig.me/m/${encodeURIComponent(CONFIG.igUser)}" target="_blank" rel="noopener" style="margin-top:14px">📩 用 IG 傳給我</a>
     <p class="small" id="hint" role="status">${esc(A.hint||'按下去會自動複製訊息並打開 IG 私訊，貼上送出就好。')}</p>`:`<p class="small" id="hint" role="status">${esc(A.hint)}</p>`}
-    ${(CONFIG.firebase||CONFIG.sheetUrl)?(A.sent?`<p class="small" role="status">✅ 這份回覆已經送到我的後台了，謝謝你！</p>`:`<button type="button" class="btn ghost" data-a="fbsend" ${A.sending?'disabled':''}>${A.sending?'送出中…':'不用 IG，直接傳給我'}</button>`):''}
-    <div class="btnrow">
-      <button type="button" class="btn ghost" data-a="copy">複製訊息</button>
-      <button type="button" class="btn ghost" data-a="share">分享…</button>
-    </div>
-    <p class="note">${CONFIG.igUser?'按「用 IG 傳給我」時，這份回覆也會同步存到我的後台，方便我幫你排時間；':''}沒按任何傳送按鈕之前，這張卡不會離開你的手機。</p>
+    <button type="button" class="btn" id="igdone" data-a="igdone" ${A.igDone?'disabled':'hidden'} style="margin-top:10px">${A.igDone?'✅ 謝謝你！我收到後會回你 💛':'我已經在 IG 傳給你了 ✅'}</button>
+    <p class="small" style="margin-top:14px">IG 打不開？<button type="button" class="link" data-a="copy" style="padding:0 4px">先複製訊息</button>，再自己貼到我們的 IG 聊天室。</p>
+    <p class="note">按「用 IG 傳給我」時，這份回覆也會同步存到我的後台，方便我幫你排時間；沒按之前，這張卡不會離開你的手機。</p>
     <button class="btn ghost" data-a="again">重新填一次</button>`;
   }
   return '';
@@ -799,9 +797,11 @@ document.addEventListener('click',async e=>{
       {let ok=false;
         try{if(navigator.clipboard)navigator.clipboard.writeText(msg()).catch(()=>{});ok=!!navigator.clipboard}catch(_){}
         if(!ok){try{const t=document.getElementById('out');t.select();t.setSelectionRange(0,99999);document.execCommand('copy')}catch(_){}}}
-      const h=document.getElementById('hint');if(h)h.textContent='已複製訊息！到 IG 聊天室貼上、送出就好。';
-      if(CONFIG.firebase||CONFIG.sheetUrl)sendData().then(ok=>{const h2=document.getElementById('hint');if(ok&&h2)h2.textContent='已複製訊息！到 IG 聊天室貼上、送出就好。（這份回覆也同步送到我的後台了）'});
+      const h=document.getElementById('hint');if(h)h.textContent='已複製訊息！到 IG 聊天室貼上、送出，送完記得回來按下面的按鈕喔。';
+      const dn=document.getElementById('igdone');if(dn)dn.hidden=false;
+      if(CONFIG.firebase||CONFIG.sheetUrl)sendData().then(ok=>{const h2=document.getElementById('hint');if(ok&&h2)h2.textContent='已複製訊息！到 IG 聊天室貼上、送出，送完記得回來按下面的按鈕喔。（這份回覆也同步送到我的後台了）'});
       break}
+    case 'igdone':A.igDone=true;render(true);break;
     case 'fbsend':{
       if(A.sending||A.sent)break;
       if(!emailOK(A.email.trim())){A.hint='Email 格式好像不太對，請檢查一下，或清空不填。';render(true);break}
