@@ -55,6 +55,9 @@ pre{white-space:pre-wrap;margin:4px 0;font:inherit}
 <div class="modal" id="modal"><div class="box" id="box"></div></div>
 <script>
 (function(){
+const SL=String.fromCharCode(47);
+const IGU='https:'+SL+SL+'ig.me'+SL+'m'+SL;
+const isHttp=u=>{const t=String(u||'').toLowerCase();return t.indexOf('http:'+SL+SL)===0||t.indexOf('https:'+SL+SL)===0};
 const API='https://script.google.com/macros/s/AKfycbziZIBySs9FOaiKcR0Tqv4u-J9F1LzAQjUGi5O27WyNfTdQXwfBS7ca6VO-3xLrv4o7/exec';
 let KEY='';try{KEY=localStorage.getItem('adminKey')||''}catch(e){}
 let D={rows:[],roster:[],missing:[]},tab='cal',cur=null;
@@ -104,13 +107,13 @@ function render(){
 }
 function planHtml(r){
   const t=[r.acts,r.planText].filter(Boolean).map(esc).join('｜');
-  const l=/^https?:\/\//i.test(r.planLink||'')?` <a href="${esc(r.planLink)}" target="_blank" rel="noopener">連結</a>`:'';
+  const l=isHttp(r.planLink)?` <a href="${esc(r.planLink)}" target="_blank" rel="noopener">連結</a>`:'';
   return (t||l)?`<div>🍽 想一起做：${t}${l}</div>`:'';
 }
 function contact(r){
   const p=[];
   if(r.email)p.push(`✉ ${esc(r.email)}`);
-  if(r.ig)p.push(`IG <a href="https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">${esc(r.ig)}</a>`);
+  if(r.ig)p.push(`IG <a href="${IGU}${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">${esc(r.ig)}</a>`);
   return p.length?p.join('　'):'<span class="small">沒留聯絡方式</span>';
 }
 function viewCal(){
@@ -201,7 +204,7 @@ async function submitBook(force){
       $('#bok').disabled=false;$('#force').onclick=()=>submitBook(true);return;
     }
     D.rows=res.rows;
-    const ig=r.ig&&!r.email?`\n\nIG：https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}`:'';
+    const ig=r.ig&&!r.email?`\n\nIG：${IGU}${encodeURIComponent(r.ig.replace(/^@/,''))}`:'';
     closeBook();render();
     if(res.mailed)toast(`已建立日曆，也寄信給 ${r.name} 了`);
     else if(!r.email){showText(r,o)}
@@ -212,7 +215,7 @@ function showText(r,o){
   const t=`嗨 ${r.name}！我們約在 ${fmtDay(o.date)} ${o.start}–${o.end}，地點：${o.city}。到時候見！`;
   $('#box').innerHTML=`<h2 style="margin-top:0">已建立日曆 ✅</h2><p>${esc(r.name)} 沒有 Email，請你自己傳這段給他：</p>
   <textarea id="cp" rows="4" readonly>${esc(t)}</textarea>
-  <p><button class="btn pri" id="cpb">複製</button> ${r.ig?`<a class="btn" href="https://ig.me/m/${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">開 IG 私訊</a>`:''} <button class="btn" id="cls">關閉</button></p>`;
+  <p><button class="btn pri" id="cpb">複製</button> ${r.ig?`<a class="btn" href="${IGU}${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">開 IG 私訊</a>`:''} <button class="btn" id="cls">關閉</button></p>`;
   $('#cpb').onclick=()=>{$('#cp').select();try{document.execCommand('copy');toast('已複製')}catch(e){}};
   $('#cls').onclick=closeBook;$('#modal').style.display='flex';
 }
