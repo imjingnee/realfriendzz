@@ -18,8 +18,8 @@
    - 誰可以存取：**所有人**
    - 按「部署」，複製「**網頁應用程式網址**」（`https://script.google.com/macros/s/.../exec`）。
 7. 把網址貼到 `invite/index.html` 的 `CONFIG.sheetUrl`（或把網址傳給 Claude，請他貼上並部署）。
-8. **後台網址**：網頁應用程式網址後面加 `?key=你的密碼`，例如
-   `https://script.google.com/macros/s/.../exec?key=你的密碼`，加到瀏覽器書籤。
+8. **後台網址（推薦）**：`https://imjingnee.github.io/realfriendzz/admin/`，第一次會問密碼（就是 `ADMIN_KEY`），輸入後會記在該瀏覽器，可加書籤。這個頁面放在 GitHub Pages，透過 Apps Script 的 API 讀寫資料，不依賴 Google 的網頁環境，比較穩。
+   （備用：網頁應用程式網址後面加 `?key=你的密碼` 也能開 Google 版的後台，但有些瀏覽器環境會卡在載入中。）
 9. 在試算表的「名單」分頁（或後台「誰還沒填」）填上你要邀請的朋友暱稱，這樣才看得到誰還沒填。
 
 > 之後改了 `Code.gs` 或 `Admin.html`，要「部署 → 管理部署作業 → 編輯 → 版本：新版本 → 部署」才會生效，網址不變。
