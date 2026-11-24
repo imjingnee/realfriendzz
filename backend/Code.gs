@@ -99,6 +99,7 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     const d = JSON.parse(e.postData.contents);
+    if (d.action) return adminApi_(d);
     const name = safe_(d.name, 40);
     if (!name) return json_({ ok: false, error: 'name' });
     const s = sheet_(SHEET_REPLY, HEAD);
@@ -127,6 +128,24 @@ function doPost(e) {
     return json_({ ok: false, error: 'bad' });
   } finally {
     try { lock.releaseLock(); } catch (e2) {}
+  }
+}
+
+/* ---------- 後台 API（給 GitHub Pages 上的後台網頁用，不依賴 Google 的網頁環境） ---------- */
+function adminApi_(d) {
+  try {
+    try { auth_(d.key); } catch (e) { Utilities.sleep(1000); throw e; }
+    let data;
+    switch (d.action) {
+      case 'adminData': data = adminData(d.key); break;
+      case 'saveRoster': data = saveRoster(d.key, d.names || []); break;
+      case 'confirmBooking': data = confirmBooking(d.key, d.id, d.o || {}); break;
+      case 'cancelBooking': data = cancelBooking(d.key, d.id); break;
+      default: throw new Error('不支援的操作');
+    }
+    return json_({ ok: true, data: data });
+  } catch (err) {
+    return json_({ ok: false, error: String(err && err.message || err) });
   }
 }
 
