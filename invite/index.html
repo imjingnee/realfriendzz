@@ -579,7 +579,7 @@ function view(id){
     <h1>我們來見面吧！</h1>
     <p>${esc(CONFIG.intro)}</p>
     <h2 style="margin-top:18px">歡迎來跟我約飯！</h2>
-    <p class="sub">先選一位陪你走完這段路的角色：你最喜歡《小王子》裡的哪個角色？</p>
+    <p class="sub">你最喜歡《小王子》中的哪個角色？</p>
     <div class="heroes">${HEROES.map((h,i)=>`<button type="button" class="hero ${A.hero===h.k?'on':''}" data-a="hero" data-k="${h.k}" aria-pressed="${A.hero===h.k}"><span class="hp">${walkerSvg(h.k)}</span><b>${i+1}　${h.n}</b></button>`).join('')}</div>
     <p class="small">你的答案不會被儲存。只有你按「傳給我」，我才會收到。</p>
     <button class="btn" data-a="next" ${canNext('intro')?'':'disabled'}>開始</button>`;
