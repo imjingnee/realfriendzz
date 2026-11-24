@@ -141,6 +141,7 @@ function adminApi_(d) {
       case 'saveRoster': data = saveRoster(d.key, d.names || []); break;
       case 'confirmBooking': data = confirmBooking(d.key, d.id, d.o || {}); break;
       case 'cancelBooking': data = cancelBooking(d.key, d.id); break;
+      case 'deleteRow': data = deleteRow(d.key, d.id); break;
       default: throw new Error('不支援的操作');
     }
     return json_({ ok: true, data: data });
@@ -266,4 +267,20 @@ function cancelBooking(key, id) {
   if (r.eventId) { try { const ev = CalendarApp.getDefaultCalendar().getEventById(r.eventId); if (ev) ev.deleteEvent(); } catch (e) {} }
   f.s.getRange(f.no, COL['狀態'] + 1, 1, 5).setValues([['待安排', '', '', '', '']]);
   return { rows: allRows_() };
+}
+
+/** 刪除一筆回覆（連同日曆上已排的活動） */
+function deleteRow(key, id) {
+  auth_(key);
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const f = findRow_(id);
+    const r = rowObj_(f.s.getRange(f.no, 1, 1, HEAD.length).getValues()[0], f.no);
+    if (r.eventId) { try { const ev = CalendarApp.getDefaultCalendar().getEventById(r.eventId); if (ev) ev.deleteEvent(); } catch (e) {} }
+    f.s.deleteRow(f.no);
+    return { rows: allRows_(), roster: rosterNames_(), missing: missing_() };
+  } finally {
+    try { lock.releaseLock(); } catch (e2) {}
+  }
 }

@@ -37,6 +37,40 @@ input,textarea,select{font:inherit;width:100%;border:2px solid var(--line);borde
 input[type=checkbox]{width:auto}
 .row{display:flex;gap:10px}.row>*{flex:1}
 pre{white-space:pre-wrap;margin:4px 0;font:inherit}
+.cbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
+.cbar h2{margin:0 8px 0 0;font-size:1.2rem}
+.cbar .sp{flex:1}
+.seg button.on{background:var(--ink);color:#fff}
+.mgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:2px solid var(--line);border-radius:10px;overflow:hidden;background:#fff8}
+.mh{padding:4px;text-align:center;font-size:.8rem;color:var(--sub);background:var(--panel);border-bottom:2px solid var(--line)}
+.mc{min-height:84px;border-right:1px solid #A8895A55;border-bottom:1px solid #A8895A55;padding:3px;cursor:pointer;overflow:hidden;font-size:.74rem}
+.mc:nth-child(7n){border-right:0}
+.mc:hover{background:#F3E2B8}
+.mc.o{background:#0000000a;color:var(--sub)}
+.mc.t .mn{background:var(--accent);color:#fff}
+.mn{display:inline-block;min-width:22px;text-align:center;border-radius:999px;font-size:.82rem;font-weight:700}
+.pill{display:block;border-radius:4px;padding:0 4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+.pill.ok{background:var(--ok);color:#fff}
+.pill.av{background:#E9C98A;border:1px dashed var(--accent)}
+.pill.pr{background:#fff;border:1px dashed var(--ok);color:var(--ok)}
+.wkscroll{overflow-x:auto;border:2px solid var(--line);border-radius:10px;background:#fff8}
+.wk{display:grid;grid-template-columns:42px repeat(7,minmax(104px,1fr));min-width:770px}
+.wh{padding:4px 2px;text-align:center;font-size:.82rem;background:var(--panel);border-bottom:2px solid var(--line);border-left:1px solid #A8895A55}
+.wh.t{background:var(--accent);color:#fff}
+.wad{padding:2px;border-left:1px solid #A8895A55;border-bottom:1px solid #A8895A55;min-height:26px}
+.tl{position:relative;font-size:.7rem;color:var(--sub)}
+.tl span{position:absolute;right:4px;transform:translateY(-50%)}
+.col{position:relative;border-left:1px solid #A8895A55;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 39px,#A8895A44 39px,#A8895A44 40px)}
+.col.t{background-color:#F9E9C0}
+.blk{position:absolute;border-radius:6px;padding:2px 4px;font-size:.76rem;line-height:1.3;overflow:auto;border:1px solid var(--ok);box-shadow:0 1px 2px #0003}
+.blk.ok{background:var(--ok);color:#fff;cursor:pointer;border:0}
+.blk.av{background:#F4DCA5;border:1.5px dashed var(--accent);color:var(--ink)}
+.blk.pr{background:#fff;border:1.5px dashed var(--ok)}
+.blk b{display:block;font-size:.72rem}
+.blk .chip{font-size:.74rem;padding:0 7px;margin:1px 3px 1px 0}
+.legend{font-size:.8rem;color:var(--sub);margin:6px 0}
+.btn.del{border-color:var(--no);color:var(--no);background:#fff}
+
 </style>
 </head>
 <body>
@@ -70,7 +104,7 @@ function toast(t){const m=$('#msg');m.textContent=t;m.style.display='block';clea
 async function call(fn,...a){
   const body={action:fn,key:KEY};
   if(fn==='confirmBooking'){body.id=a[0];body.o=a[1]}
-  else if(fn==='cancelBooking'){body.id=a[0]}
+  else if(fn==='cancelBooking'||fn==='deleteRow'){body.id=a[0]}
   else if(fn==='saveRoster'){body.names=a[0]}
   let res;
   try{res=await fetch(API,{method:'POST',body:JSON.stringify(body)})}catch(e){throw new Error('連不上伺服器，請檢查網路後再試')}
@@ -116,26 +150,84 @@ function contact(r){
   if(r.ig)p.push(`IG <a href="${IGU}${encodeURIComponent(r.ig.replace(/^@/,''))}" target="_blank" rel="noopener">${esc(r.ig)}</a>`);
   return p.length?p.join('　'):'<span class="small">沒留聯絡方式</span>';
 }
+const pad2=n=>String(n).padStart(2,'0');
+const ymd=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+const pdate=ds=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(ds||'');return m?new Date(+m[1],+m[2]-1,+m[3]):null};
+const addDays=(d,n)=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);return x};
+const tmin=t=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t||'');return m?+m[1]*60+ +m[2]:null};
+let CV={mode:'month',a:ymd(new Date())};
+const H0=7,HH=40;
+function buildIndex(){
+  const ix={};const g=d=>ix[d]||(ix[d]={conf:[],av:[],pr:[]});
+  D.rows.forEach(r=>{
+    if(r.status==='已確認'&&r.confDate){g(r.confDate).conf.push(r);return}
+    r.slots.forEach(sl=>{
+      if(sl.prop){if(pdate(sl.d))g(sl.d).pr.push({r:r,s:sl});return}
+      const a=pdate(sl.d);if(!a)return;
+      const z=pdate(sl.to)||a;
+      for(let i=0,d=a;d<=z&&i<60;i++,d=addDays(a,i))g(ymd(d)).av.push({r:r,s:sl});
+    });
+  });
+  return ix;
+}
+function lanes(items){
+  items.sort((x,y)=>x.a-y.a||y.b-x.b);
+  const ends=[];
+  items.forEach(it=>{let l=0;while(ends[l]!==undefined&&ends[l]>it.a)l++;it.l=l;ends[l]=it.b});
+  items.forEach(it=>{const ov=items.filter(o=>o.a<it.b&&o.b>it.a);it.n=Math.max.apply(null,ov.map(o=>o.l))+1});
+  return items;
+}
 function viewCal(){
-  const confirmed=D.rows.filter(r=>r.status==='已確認').sort((a,b)=>(a.confDate+a.confTime).localeCompare(b.confDate+b.confTime));
-  let h=`<h2>已確認的行程（${confirmed.length}）</h2>`;
-  h+=confirmed.length?confirmed.map(r=>`<div class="card done"><b>${esc(fmtDay(r.confDate))} ${esc(r.confTime)}</b>　${esc(r.confCity||r.city)}　<b>${esc(r.name)}</b>
-    <div class="small">${contact(r)}</div>
-    <button class="btn sm" data-act="book" data-id="${esc(r.id)}">改時間</button> <button class="btn sm" data-act="cancel" data-id="${esc(r.id)}">取消</button></div>`).join(''):'<p class="small">還沒有。從下面點朋友的名字就能安排。</p>';
-  const days={};
-  D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>!s.prop).forEach(s=>{
-    const k=s.d+'|'+s.city+'|'+s.note;((days[s.d]=days[s.d]||{})[s.city+'|'+s.note]=(days[s.d][s.city+'|'+s.note]||{s:s,p:[]})).p.push(r)}));
-  const ds=Object.keys(days).sort();
-  h+=`<h2>還沒安排的人，各時段誰可以（點名字來安排）</h2>`;
-  h+=ds.length?ds.map(d=>{
-    const booked=confirmed.filter(r=>r.confDate===d);
-    return `<div class="day"><h3>${esc(fmtDay(d))}${booked.length?`<span class="tag ok">已排 ${booked.length}</span>`:''}</h3>`+
-    Object.values(days[d]).map(x=>`<div class="slot"><b>${esc(x.s.city)} ${esc(x.s.note)}</b>：`+
-      x.p.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.city)}" data-note="${esc(x.s.note)}">${esc(r.name)}</button>`).join('')+`</div>`).join('')+`</div>`;
-  }).join(''):'<p class="small">目前沒有待安排的時段。</p>';
-  const props=[];D.rows.filter(r=>r.status!=='已確認').forEach(r=>r.slots.filter(s=>s.prop).forEach(s=>props.push({r:r,s:s})));
-  props.sort((a,b)=>(a.s.d+a.s.note).localeCompare(b.s.d+b.s.note));
-  if(props.length)h+=`<h2>對方提議的時間（${props.length}）<span class="tag">反過來約你</span></h2>`+props.map(x=>`<div class="slot"><b>${esc(fmtDay(x.s.d))} ${esc(x.s.note)}</b>${x.s.place?`　${esc(x.s.place)}`:''}：<button class="chip" data-act="book" data-id="${esc(x.r.id)}" data-d="${esc(x.s.d)}" data-city="${esc(x.s.place||x.r.city)}" data-note="${esc(x.s.note)}">${esc(x.r.name)}</button></div>`).join('');
+  const ix=buildIndex(),a=pdate(CV.a)||new Date(),today=ymd(new Date());
+  const month=CV.mode==='month';
+  let title,h='';
+  if(month)title=`${a.getFullYear()} 年 ${a.getMonth()+1} 月`;
+  else{const s0=addDays(a,-a.getDay()),e0=addDays(s0,6);title=`${s0.getMonth()+1}/${s0.getDate()} – ${e0.getMonth()+1}/${e0.getDate()}`}
+  h+=`<div class="cbar"><h2>${esc(title)}</h2><button class="btn sm" data-act="nav" data-v="-1">‹</button><button class="btn sm" data-act="nav" data-v="0">今天</button><button class="btn sm" data-act="nav" data-v="1">›</button><span class="sp"></span>
+  <span class="seg"><button class="btn sm ${month?'on':''}" data-act="mode" data-v="month">月</button> <button class="btn sm ${month?'':'on'}" data-act="mode" data-v="week">週</button></span></div>
+  <div class="legend"><span class="chip" style="background:var(--ok);color:#fff;border-color:var(--ok)">已確認</span><span class="chip" style="background:#F4DCA5;border-style:dashed">朋友可以的時段（點名字安排）</span><span class="chip" style="border-style:dashed">對方提議</span></div>`;
+  if(month){
+    const f=new Date(a.getFullYear(),a.getMonth(),1),st=addDays(f,-f.getDay());
+    h+='<div class="mgrid">'+WD.map(w=>`<div class="mh">${w}</div>`).join('');
+    for(let i=0;i<42;i++){
+      const d=addDays(st,i),k=ymd(d),x=ix[k]||{conf:[],av:[],pr:[]};
+      if(i>=35&&d.getMonth()!==a.getMonth())break;
+      const names=[...new Set(x.av.map(v=>v.r.id))].length;
+      h+=`<div class="mc ${d.getMonth()!==a.getMonth()?'o':''} ${k===today?'t':''}" data-act="goweek" data-d="${k}"><span class="mn">${d.getDate()}</span>`+
+        x.conf.slice(0,2).map(r=>`<span class="pill ok">${esc(r.confTime.split(/[–-]/)[0])} ${esc(r.name)}</span>`).join('')+(x.conf.length>2?`<span class="pill ok">+${x.conf.length-2}</span>`:'')+
+        (names?`<span class="pill av">${names} 人可以</span>`:'')+(x.pr.length?`<span class="pill pr">${x.pr.length} 個提議</span>`:'')+`</div>`;
+    }
+    h+='</div><p class="small">點某一天，就會展開成那一週的時間表。</p>';
+  }else{
+    const s0=addDays(a,-a.getDay()),days=[...Array(7)].map((_,i)=>addDays(s0,i));
+    h+='<div class="wkscroll"><div class="wk"><div class="wh" style="border-left:0"></div>'+days.map(d=>`<div class="wh ${ymd(d)===today?'t':''}">${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）</div>`).join('');
+    // all-day row
+    h+='<div class="wad" style="border-left:0;font-size:.7rem;color:var(--sub)">全天</div>'+days.map(d=>{
+      const x=ix[ymd(d)]||{av:[],pr:[]};
+      const al=x.av.filter(v=>!v.s.note);
+      return `<div class="wad">${al.map(v=>`<button class="chip" data-act="book" data-id="${esc(v.r.id)}" data-d="${ymd(d)}" data-city="${esc(v.s.city)}" data-note="">${esc(v.r.name)}</button>`).join('')}</div>`}).join('');
+    // time grid
+    let tl='';for(let hr=H0;hr<=24;hr++)tl+=`<span style="top:${(hr-H0)*HH}px">${hr===24?'':hr+':00'}</span>`;
+    h+=`<div class="tl" style="height:${(24-H0)*HH}px">${tl}</div>`;
+    days.forEach(d=>{
+      const k=ymd(d),x=ix[k]||{conf:[],av:[],pr:[]},items=[];
+      x.conf.forEach(r=>{const p=r.confTime.split(/[–-]/);const a0=tmin(p[0]),b0=tmin(p[1]);if(a0!=null&&b0!=null)items.push({a:a0,b:b0,t:'ok',r:r})});
+      const grp={};
+      x.av.filter(v=>v.s.note).forEach(v=>{const t=NOTE_T(v.s.note);const key='av|'+t[0]+'|'+t[1]+'|'+v.s.city+'|'+v.s.note;(grp[key]=grp[key]||{a:tmin(t[0]),b:tmin(t[1]),t:'av',city:v.s.city,note:v.s.note,list:[]}).list.push(v.r)});
+      Object.values(grp).forEach(g=>items.push(g));
+      const pg={};
+      x.pr.forEach(v=>{const t=NOTE_T(v.s.note||'');const key='pr|'+t[0]+'|'+t[1]+'|'+(v.s.place||'')+'|'+v.s.note;(pg[key]=pg[key]||{a:tmin(t[0]),b:tmin(t[1]),t:'pr',city:v.s.place||v.r.city,note:v.s.note,list:[]}).list.push(v.r)});
+      Object.values(pg).forEach(g=>items.push(g));
+      lanes(items);
+      h+=`<div class="col ${k===today?'t':''}" style="height:${(24-H0)*HH}px">`+items.map(it=>{
+        const top=Math.max(0,(it.a-H0*60)/60*HH),ht=Math.max(28,(it.b-it.a)/60*HH-2);
+        const pos=`top:${top}px;height:${ht}px;left:calc(${it.l/it.n*100}% + 1px);width:calc(${100/it.n}% - 3px)`;
+        if(it.t==='ok')return `<div class="blk ok" style="${pos}" data-act="book" data-id="${esc(it.r.id)}"><b>${esc(it.r.confTime)}</b>${esc(it.r.name)}${it.r.confCity?' · '+esc(it.r.confCity):''}</div>`;
+        return `<div class="blk ${it.t}" style="${pos}"><b>${it.t==='pr'?'提議 ':''}${esc(it.note)} · ${esc(it.city)}</b>`+it.list.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}" data-d="${k}" data-city="${esc(it.city)}" data-note="${esc(it.note)}">${esc(r.name)}</button>`).join('')+`</div>`;
+      }).join('')+`</div>`;
+    });
+    h+='</div></div><p class="small">點綠色方塊可以改時間；點黃色方塊裡的名字可以直接安排。左右可以滑動。</p>';
+  }
   const none=D.rows.filter(r=>r.status!=='已確認'&&!r.slots.length);
   if(none.length)h+=`<h2>沒選到時段／時間都不行（${none.length}）</h2>`+none.map(r=>`<button class="chip" data-act="book" data-id="${esc(r.id)}">${esc(r.name)}</button>`).join('')+`<p class="small">這些人要你再跟他們約，點名字可手動指定日期。</p>`;
   return h;
@@ -149,7 +241,7 @@ function viewRep(){
     <div class="small">最愛：${esc(r.hero||'—')}　角色：${esc(r.role)}　猜猜我：${esc(r.guess)}</div>
     <div><pre>${esc(r.dates)}</pre></div>
     <div>${contact(r)}</div>
-    <button class="btn sm" data-act="book" data-id="${esc(r.id)}">${r.status==='已確認'?'改時間':'安排時間'}</button></div>`).join('');
+    <button class="btn sm" data-act="book" data-id="${esc(r.id)}">${r.status==='已確認'?'改時間':'安排時間'}</button> <button class="btn sm del" data-act="del" data-id="${esc(r.id)}">刪除</button></div>`).join('');
 }
 function viewRoster(){
   const done=D.roster.filter(n=>!D.missing.includes(n));
@@ -159,7 +251,7 @@ function viewRoster(){
   ${D.roster.length?`<h2>還沒填（${D.missing.length}）</h2>${D.missing.map(n=>`<span class="chip">${esc(n)}</span>`).join('')||'<p class="small">全部都填了 🎉</p>'}
   <h2>已填（${done.length}）</h2>${done.map(n=>`<span class="chip">${esc(n)} ✓</span>`).join('')}`:''}`;
 }
-const NOTE_T=n=>/早/.test(n)?['09:00','11:30']:/晚/.test(n)?['18:30','21:00']:/午/.test(n)?['12:00','14:00']:['12:00','14:00'];
+function NOTE_T(n){n=n||'';return /早/.test(n)?['09:00','11:30']:/晚/.test(n)?['18:30','21:00']:/下午/.test(n)?['14:00','17:00']:['12:00','14:00']}
 function openBook(id,pre){
   const r=D.rows.find(x=>x.id===id);if(!r)return;
   const first=r.slots.find(x=>!x.prop)||r.slots[0]||{};
@@ -178,18 +270,24 @@ function openBook(id,pre){
   <label>信件主旨</label><input id="bsub" value="我們確定見面囉！">
   <label>信件內容</label><textarea id="bbody" rows="7"></textarea>`:
   `<p class="small">他沒留 Email。確認後下面會給你一段文字，可以複製後用 IG 傳給他。</p>`}
-  <p><button class="btn pri" id="bok">確認並建立日曆</button> <button class="btn" id="bno">取消</button></p>
+  <p><button class="btn pri" id="bok">確認並建立日曆</button> <button class="btn" id="bno">取消</button> <button class="btn sm del" id="bdel">刪除這筆回覆</button></p>
   <div id="berr" class="small" style="color:var(--no)"></div>`;
   const fill=()=>{const b=$('#bbody');if(b)b.value=mailBody(r)};
   fill();
   ['#bd','#bs','#be','#bc'].forEach(s=>$(s).addEventListener('change',()=>{const b=$('#bbody');if(b&&!b.dataset.edited)fill()}));
   if($('#bbody'))$('#bbody').addEventListener('input',e=>e.target.dataset.edited='1');
   $('#bno').onclick=closeBook;
+  $('#bdel').onclick=()=>delRow(r.id,true);
   $('#bok').onclick=()=>submitBook(false);
   $('#modal').style.display='flex';
 }
 function mailBody(r){
   return `嗨 ${r.name}！\n\n我們約在 ${fmtDay($('#bd').value)} ${$('#bs').value}–${$('#be').value}，地點：${$('#bc').value}。\n細節我再跟你確認，到時候見！`;
+}
+async function delRow(id,fromModal){
+  const r=D.rows.find(x=>x.id===id);if(!r)return;
+  if(!confirm('確定要刪除「'+r.name+'」這筆回覆嗎？\n試算表上的這一列會被刪掉，如果已排行程，日曆上的活動也會一起刪除。刪掉就回不來了。'))return;
+  try{const res=await call('deleteRow',id);D.rows=res.rows;D.roster=res.roster;D.missing=res.missing;if(fromModal)closeBook();render();toast('已刪除')}catch(err){toast('失敗：'+err.message)}
 }
 function closeBook(){$('#modal').style.display='none';cur=null}
 async function submitBook(force){
@@ -224,6 +322,10 @@ document.addEventListener('click',async e=>{
   if(e.target.id==='reload'){load();return}
   const b=e.target.closest('[data-act]');if(!b)return;
   const a=b.dataset.act;
+  if(a==='del')delRow(b.dataset.id,false);
+  if(a==='nav'){const v=+b.dataset.v,d=pdate(CV.a);CV.a=v===0?ymd(new Date()):ymd(CV.mode==='month'?new Date(d.getFullYear(),d.getMonth()+v,1):addDays(d,7*v));render()}
+  if(a==='mode'){CV.mode=b.dataset.v;render()}
+  if(a==='goweek'){CV.a=b.dataset.d;CV.mode='week';render()}
   if(a==='book')openBook(b.dataset.id,{d:b.dataset.d,city:b.dataset.city,note:b.dataset.note});
   if(a==='cancel'){
     if(!confirm('取消這個行程？日曆上的活動也會刪掉（不會寄信）。'))return;
