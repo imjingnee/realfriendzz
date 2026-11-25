@@ -394,7 +394,7 @@ CH.filter(function(c){return c.b==='小王子'}).forEach(function(c){for(var k i
 /* ===== 狀態 ===== */
 const STEPS=['intro','who','g0','g1','g2','cd','plan','mood','result'];
 const CARD_N=3;
-const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],budget:-1,foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false,igDone:false});
+const fresh=()=>({name:'',rel:-1,relOther:'',g:[-1,-1,-1],city:-1,cityOther:'',dates:[],showAll:false,hero:'',calMonth:'',dayOpen:'',acts:[],actText:'',actLink:'',proposals:[],propOpen:false,pd:'',pp:[],pplace:'',format:-1,invitees:[],inviteInput:'',food:[],budget:-1,gift:'',foodNote:'',email:'',ig:'',vibe:-1,arrive:-1,topic:[],hint:'',sending:false,sent:false,igDone:false});
 let A=fresh(),step=0;
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -500,6 +500,7 @@ function msg(){
     ...((A.email.trim()||A.ig.trim())?[`聯絡：${[A.email.trim(),A.ig.trim()&&'IG '+A.ig.trim()].filter(Boolean).join('／')}`]:[]),
     ...(groupOK()&&A.invitees.length?[`希望你也邀請：${A.invitees.join('、')}`]:[]),
     ...(A.acts.some(i=>ACTS[i]==='吃飯')?[`飲食：${A.food.length?pick(FOOD,A.food):'沒有特別'}${A.budget>=0?`；預算：${BUDGET[A.budget]}`:''}${A.foodNote.trim()?`（備註：${A.foodNote.trim()}）`:''}`]:[]),
+    ...(A.gift.trim()?[`想要的手信：${A.gift.trim()}`]:[]),
     `喜歡的氣氛：${VIBE[A.vibe]}`,
     `見面時的我：${ARR[A.arrive]}`,
     `我的赴約角色：${r.n}`,
@@ -632,6 +633,8 @@ function view(id){
     <h2 style="margin-top:22px">用餐預算（每人）</h2><p class="sub">選填，大概的感覺就好。</p>${opts(BUDGET,A.budget,'budget')}
     <label class="f" for="fn">忌口或過敏備註（選填）</label>
     <input id="fn" type="text" maxlength="40" placeholder="例如：不吃牛、花生過敏" value="${esc(A.foodNote)}" data-i="foodNote">`:''}
+    <h2 style="margin-top:26px">想要我幫你帶什麼手信？</h2><p class="sub">選填。我去旅行的時候，可以順便幫你帶。</p>
+    <input id="gf" type="text" maxlength="60" placeholder="例如：鳳梨酥、當地的零食、明信片" value="${esc(A.gift)}" data-i="gift">
     <button class="btn" data-a="next" ${canNext(id)?'':'disabled'}>下一步</button>`;
   }
   if(id==='mood')return `<p class="small">見面卡 3 / ${CARD_N}</p><h2>你比較喜歡哪種氣氛？</h2>${opts(VIBE,A.vibe,'vibe')}
@@ -741,7 +744,7 @@ async function sendData(){
     const emailGood=emailOK(A.email.trim());
       const r=role(),relation=A.rel===REL.length-1&&A.relOther.trim()?'其他：'+A.relOther.trim():REL[A.rel];
       const payload={name:A.name.trim(),relation,city:cityName(),dates:dateLabels(),slots:slotsData(),format:FORMAT[A.format],
-        invitees:groupOK()?A.invitees.slice(0,5):[],email:emailGood?A.email.trim():'',ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,hero:(HEROES.find(h=>h.k===A.hero)||{}).n||'',acts:A.acts.map(i=>ACTS[i]),planText:[A.actText.trim(),(A.acts.some(i=>ACTS[i]==='吃飯')&&A.budget>=0)?'預算：'+BUDGET[A.budget]:''].filter(Boolean).join('｜'),planLink:normLink(A.actLink),message:msg()};
+        invitees:groupOK()?A.invitees.slice(0,5):[],email:emailGood?A.email.trim():'',ig:A.ig.trim().replace(/^@/,''),role:r.n,guess:`${hits()} / ${scored()}`,hero:(HEROES.find(h=>h.k===A.hero)||{}).n||'',acts:A.acts.map(i=>ACTS[i]),planText:[A.actText.trim(),(A.acts.some(i=>ACTS[i]==='吃飯')&&A.budget>=0)?'預算：'+BUDGET[A.budget]:'',A.gift.trim()?'手信：'+A.gift.trim():''].filter(Boolean).join('｜'),planLink:normLink(A.actLink),message:msg()};
       const jobs=[];
       if(CONFIG.sheetUrl)jobs.push((async()=>{
         const res=await fetch(CONFIG.sheetUrl,{method:'POST',body:JSON.stringify(payload)});
