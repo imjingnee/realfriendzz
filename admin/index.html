@@ -69,6 +69,17 @@ pre{white-space:pre-wrap;margin:4px 0;font:inherit}
 .blk b{display:block;font-size:.72rem}
 .blk .chip{font-size:.74rem;padding:0 7px;margin:1px 3px 1px 0}
 .legend{font-size:.8rem;color:var(--sub);margin:6px 0}
+.pill .sh{display:none}
+.tc{position:sticky;left:0;z-index:3;background:var(--panel)}
+.tl.tc{background:#F7EBCF}
+.wad.tc{background:#F7EBCF}
+@media(max-width:600px){
+.mc{min-height:104px;padding:2px;font-size:.7rem}
+.pill{white-space:normal;word-break:break-all;font-size:.68rem;line-height:1.25;padding:1px 3px}
+.pill .tm,.pill .lg{display:none}
+.pill .sh{display:inline}
+.wk{grid-template-columns:40px repeat(7,minmax(112px,1fr))}
+}
 .btn.del{border-color:var(--no);color:var(--no);background:#fff}
 
 </style>
@@ -138,6 +149,8 @@ function render(){
   $('#sum').textContent=`已收到 ${total} 份回覆，已確認 ${conf} 位，待安排 ${total-conf} 位`+(D.roster.length?`，名單上還沒填：${D.missing.length} 位`:'');
   document.querySelectorAll('#tabs button[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
   $('#view').innerHTML=tab==='cal'?viewCal():tab==='rep'?viewRep():viewRoster();
+  if(tab==='cal'&&CV.mode==='week'&&CV.sc){CV.sc=false;const w=document.querySelector('.wkscroll');
+    if(w&&w.scrollWidth>w.clientWidth){const cw=(w.scrollWidth-40)/7;w.scrollLeft=Math.max(0,(pdate(CV.a).getDay())*cw-4)}}
 }
 function planHtml(r){
   const t=[r.acts,r.planText].filter(Boolean).map(esc).join('｜');
@@ -194,21 +207,21 @@ function viewCal(){
       if(i>=35&&d.getMonth()!==a.getMonth())break;
       const names=[...new Set(x.av.map(v=>v.r.id))].length;
       h+=`<div class="mc ${d.getMonth()!==a.getMonth()?'o':''} ${k===today?'t':''}" data-act="goweek" data-d="${k}"><span class="mn">${d.getDate()}</span>`+
-        x.conf.slice(0,2).map(r=>`<span class="pill ok">${esc(r.confTime.split(/[–-]/)[0])} ${esc(r.name)}</span>`).join('')+(x.conf.length>2?`<span class="pill ok">+${x.conf.length-2}</span>`:'')+
-        (names?`<span class="pill av">${names} 人可以</span>`:'')+(x.pr.length?`<span class="pill pr">${x.pr.length} 個提議</span>`:'')+`</div>`;
+        x.conf.slice(0,2).map(r=>`<span class="pill ok"><span class="tm">${esc(r.confTime.split(/[–-]/)[0])} </span>${esc(r.name)}</span>`).join('')+(x.conf.length>2?`<span class="pill ok">+${x.conf.length-2}</span>`:'')+
+        (names?`<span class="pill av"><span class="lg">${names} 人可以</span><span class="sh">${names}人</span></span>`:'')+(x.pr.length?`<span class="pill pr"><span class="lg">${x.pr.length} 個提議</span><span class="sh">${x.pr.length}提議</span></span>`:'')+`</div>`;
     }
     h+='</div><p class="small">點某一天，就會展開成那一週的時間表。</p>';
   }else{
     const s0=addDays(a,-a.getDay()),days=[...Array(7)].map((_,i)=>addDays(s0,i));
-    h+='<div class="wkscroll"><div class="wk"><div class="wh" style="border-left:0"></div>'+days.map(d=>`<div class="wh ${ymd(d)===today?'t':''}">${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）</div>`).join('');
+    h+='<div class="wkscroll"><div class="wk"><div class="wh tc" style="border-left:0"></div>'+days.map(d=>`<div class="wh ${ymd(d)===today?'t':''}">${d.getMonth()+1}/${d.getDate()}（${WD[d.getDay()]}）</div>`).join('');
     // all-day row
-    h+='<div class="wad" style="border-left:0;font-size:.7rem;color:var(--sub)">全天</div>'+days.map(d=>{
+    h+='<div class="wad tc" style="border-left:0;font-size:.7rem;color:var(--sub)">全天</div>'+days.map(d=>{
       const x=ix[ymd(d)]||{av:[],pr:[]};
       const al=x.av.filter(v=>!v.s.note);
       return `<div class="wad">${al.map(v=>`<button class="chip" data-act="book" data-id="${esc(v.r.id)}" data-d="${ymd(d)}" data-city="${esc(v.s.city)}" data-note="">${esc(v.r.name)}</button>`).join('')}</div>`}).join('');
     // time grid
     let tl='';for(let hr=H0;hr<=24;hr++)tl+=`<span style="top:${(hr-H0)*HH}px">${hr===24?'':hr+':00'}</span>`;
-    h+=`<div class="tl" style="height:${(24-H0)*HH}px">${tl}</div>`;
+    h+=`<div class="tl tc" style="height:${(24-H0)*HH}px">${tl}</div>`;
     days.forEach(d=>{
       const k=ymd(d),x=ix[k]||{conf:[],av:[],pr:[]},items=[];
       x.conf.forEach(r=>{const p=r.confTime.split(/[–-]/);const a0=tmin(p[0]),b0=tmin(p[1]);if(a0!=null&&b0!=null)items.push({a:a0,b:b0,t:'ok',r:r})});
@@ -323,9 +336,9 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
   const a=b.dataset.act;
   if(a==='del')delRow(b.dataset.id,false);
-  if(a==='nav'){const v=+b.dataset.v,d=pdate(CV.a);CV.a=v===0?ymd(new Date()):ymd(CV.mode==='month'?new Date(d.getFullYear(),d.getMonth()+v,1):addDays(d,7*v));render()}
-  if(a==='mode'){CV.mode=b.dataset.v;render()}
-  if(a==='goweek'){CV.a=b.dataset.d;CV.mode='week';render()}
+  if(a==='nav'){const v=+b.dataset.v,d=pdate(CV.a);CV.sc=true;CV.a=v===0?ymd(new Date()):ymd(CV.mode==='month'?new Date(d.getFullYear(),d.getMonth()+v,1):addDays(d,7*v));render()}
+  if(a==='mode'){CV.mode=b.dataset.v;CV.sc=true;render()}
+  if(a==='goweek'){CV.a=b.dataset.d;CV.mode='week';CV.sc=true;render()}
   if(a==='book')openBook(b.dataset.id,{d:b.dataset.d,city:b.dataset.city,note:b.dataset.note});
   if(a==='cancel'){
     if(!confirm('取消這個行程？日曆上的活動也會刪掉（不會寄信）。'))return;
