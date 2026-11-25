@@ -175,7 +175,7 @@ const ACTS=['吃飯','逛逛／玩','算塔羅','其他'];
 const ACT_ICON=['🍽️','🎡','🔮','✨'];
 const FORMAT=['一對一見面','小聚（我們幾個朋友一起）','都可以'];
 const FOOD=['葷素都吃','偏素或吃素','有忌口或過敏（請在下方備註）','不吃辣','愛吃辣','愛甜點'];
-const BUDGET=['都可以，看你','平價小吃就好','一般餐廳','想吃好一點'];
+const BUDGET=['都可以，看你','RM30 以內（平價小吃）','RM30–60（一般餐廳）','RM60–100（想吃好一點）','RM100 以上（大餐）'];
 const VIBE=['安靜好聊天','熱鬧有氣氛','邊吃邊玩點小遊戲','都可以'];
 const ARR=['先在旁邊觀察一下','主動跟對方聊開','需要對方先開場','看現場氣氛再決定'];
 const TOPIC=['近況與心情','創作與作品','旅行','工作與職涯','社會議題','感情與人生','搞笑廢話','深度話題'];
@@ -630,7 +630,7 @@ function view(id){
     <input id="al" type="url" inputmode="url" maxlength="300" placeholder="例如 Google 地圖、IG、網站" value="${esc(A.actLink)}" data-i="actLink">
     <p class="small" id="alh" role="status">${linkOK(A.actLink)?'':'連結格式好像不太對，請檢查一下，或清空不填。'}</p>`:''}
     ${eat?`<h2 style="margin-top:26px">吃的方面，我要注意什麼？</h2><p class="sub">可以多選，也可以略過。</p>${opts(FOOD,A.food,'food')}
-    <h2 style="margin-top:22px">用餐預算（每人）</h2><p class="sub">選填，大概的感覺就好。</p>${opts(BUDGET,A.budget,'budget')}
+    <h2 style="margin-top:22px">用餐預算（每人）</h2><p class="sub">選填，大概的感覺就好。（馬幣）</p>${opts(BUDGET,A.budget,'budget')}
     <label class="f" for="fn">忌口或過敏備註（選填）</label>
     <input id="fn" type="text" maxlength="40" placeholder="例如：不吃牛、花生過敏" value="${esc(A.foodNote)}" data-i="foodNote">`:''}
     <h2 style="margin-top:26px">想要我幫你帶什麼手信？</h2><p class="sub">選填。我去旅行的時候，可以順便幫你帶。</p>
